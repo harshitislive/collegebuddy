@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String             @unique
+  password  String
+  role      Role               @default(STUDENT)
+  courses   CourseEnrollment[]
+  createdAt DateTime           @default(now())
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  SUPERADMIN
+}
+
+model CourseEnrollment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String   @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String   @db.ObjectId
+  joinedAt  DateTime @default(now())
+}
+
+model Course {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  code        String?
+  subjects    Subject[]
+  enrollments CourseEnrollment[] // 👈 back relation added here
+  createdAt   DateTime           @default(now())
+}
+
+model Subject {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  course      Course        @relation(fields: [courseId], references: [id])
+  courseId    String        @db.ObjectId
+  sessions    LiveSession[]
+  lectures    Lecture[]
+  notes       Note[]
+  assignments Assignment[]
+}
+
+model LiveSession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  date      DateTime
+  meetLink  String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subjectId String   @db.ObjectId
+  liveNotes String?
+}
+
+model Lecture {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  url       String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId String  @db.ObjectId
+}
+
+enum NoteCategory {
+  UNIT
+  PYQ
+  LIVE
+}
+
+model Note {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  fileUrl   String
+  subject   Subject       @relation(fields: [subjectId], references: [id])
+  subjectId String        @db.ObjectId
+  category  NoteCategory  @default(UNIT) // 👈 NEW
+}
+
+model Assignment {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  dueDate     DateTime?
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  subjectId   String    @db.ObjectId
+}
