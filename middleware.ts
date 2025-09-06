@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { getToken } from "next-auth/jwt";
 
 // Protected routes
 const PROTECTED = ["/dashboard", "/notes", "/lectures", "/live", "/referral", "/profile"];
 const ADMIN_ONLY = ["/admin"];
 const SUPER_ONLY = ["/super-admin"];
 
-// Secret must be Uint8Array for jose
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Determine if route requires authentication
   const needsAuth =
     PROTECTED.some((p) => pathname.startsWith(p)) ||
     ADMIN_ONLY.some((p) => pathname.startsWith(p)) ||
@@ -20,32 +18,29 @@ export async function middleware(req: NextRequest) {
 
   if (!needsAuth) return NextResponse.next();
 
-  const token = req.cookies.get("token")?.value;
+  // Retrieve NextAuth token/session
+  const token = await getToken({ req });
   if (!token) {
     const url = new URL("/login", req.url);
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  try {
-    const { payload } = await jwtVerify(token, secret);
-    console.log("🔑 Middleware payload:", payload);
+  // Enforce role restrictions based on token contents
+  const role = token.role as string | undefined;
 
-    // SuperAdmin-only
-    if (SUPER_ONLY.some((p) => pathname.startsWith(p)) && payload.role !== "SUPERADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    // Admin-only
-    if (ADMIN_ONLY.some((p) => pathname.startsWith(p)) && !["ADMIN", "SUPERADMIN"].includes(payload.role as string)) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    return NextResponse.next();
-  } catch (err) {
-    console.error("❌ Invalid token in middleware:", err);
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (SUPER_ONLY.some((p) => pathname.startsWith(p)) && role !== "SUPERADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
+
+  if (
+    ADMIN_ONLY.some((p) => pathname.startsWith(p)) &&
+    !["ADMIN", "SUPERADMIN"].includes(role ?? "")
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

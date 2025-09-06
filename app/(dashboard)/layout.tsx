@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -47,13 +48,6 @@ export default function DashboardLayout({
     };
   }, [open]);
 
-  const handleLogout = async () => {
-    // try {
-    //   await fetch("/api/logout", { method: "POST" });
-    // } catch (_) {}
-    // window.location.href = "/login";
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Bar (mobile + tablet) */}
@@ -94,7 +88,7 @@ export default function DashboardLayout({
         </nav>
         <div className="p-4 border-t border-white/10">
           <button
-            onClick={handleLogout}
+            onClick={() => signOut()}
             className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 font-medium"
           >
             <LogOut className="h-4 w-4" />
@@ -146,7 +140,7 @@ export default function DashboardLayout({
         </nav>
         <div className="p-4 border-t border-white/10 mt-auto">
           <button
-            onClick={handleLogout}
+            onClick={() => signOut()}
             className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 font-medium"
           >
             <LogOut className="h-4 w-4" />
