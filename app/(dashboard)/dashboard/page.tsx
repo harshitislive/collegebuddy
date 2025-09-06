@@ -1,8 +1,8 @@
 "use client"
-
-import { useState } from "react"
-import { Flame } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Image from "next/image";
+import { useState } from "react";
+import { Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Dummy event posters (replace with real images later)
 const events = [
@@ -45,7 +45,12 @@ export default function DashboardPage() {
 
       {/* Event Updates Carousel */}
       <div className="relative w-full max-w-2xl mx-auto">
-        <img
+        <Image
+          width={600}
+          height={400}
+          layout="responsive"
+          objectFit="cover"
+          unoptimized
           src={events[currentEvent].img}
           alt="Event poster"
           className="rounded-xl shadow-md w-full"

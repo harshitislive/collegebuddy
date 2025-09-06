@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
 
@@ -30,7 +31,7 @@ export default async function AdminHome() {
       <div className="mt-8 bg-white p-6 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-2">Next steps</h2>
         <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-          <li>Go to <a href="/admin/subjects" className="text-blue-600 hover:underline">Subjects</a> and pick a subject to manage.</li>
+          <li>Go to <Link href="/admin/subjects" className="text-blue-600 hover:underline">Subjects</Link> and pick a subject to manage.</li>
           <li>Add Notes (PDF links), Lectures (YouTube URLs), Live Sessions (Meet links), Assignments (with due dates).</li>
         </ul>
       </div>

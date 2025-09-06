@@ -1,10 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { getToken } from "next-auth/jwt";
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
@@ -34,13 +30,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(subjects);
-  } catch (err: any) {
-    if (err?.message === "NO_TOKEN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (err?.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  } catch (err) {
+    console.error("Error fetching subjects:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -82,14 +73,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(created);
-  } catch (err: any) {
-    if (err?.message === "NO_TOKEN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (err?.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error("Error creating subject:", err);
+    return NextResponse.json({ error: "Failed to create subject" }, { status: 500 });
   }
 }
 
@@ -120,18 +106,9 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(updated);
-  } catch (err: any) {
-    if (err?.message === "NO_TOKEN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (err?.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    // Prisma not found error → send 404
-    if (String(err?.message || "").toLowerCase().includes("record to update not found")) {
-      return NextResponse.json({ error: "Subject not found" }, { status: 404 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.log("Error updating subject:", err);
+    return NextResponse.json({ error: "Failed to update subject" }, { status: 500 });
   }
 }
 
@@ -171,13 +148,8 @@ export async function DELETE(req: NextRequest) {
     await prisma.subject.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    if (err?.message === "NO_TOKEN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (err?.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.log("Error deleting subject:", err);
+    return NextResponse.json({ error: "Failed to delete subject" }, { status: 500 });
   }
 }

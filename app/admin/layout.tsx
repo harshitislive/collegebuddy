@@ -4,15 +4,13 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, LayoutDashboard, BookOpen, Video, Radio, FileText, LogOut } from "lucide-react";
+import { Menu, X, LayoutDashboard, BookOpen, FileText, LogOut } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/admin/subjects", label: "Subjects", Icon: BookOpen },
   // Child content will be accessed per subject; these are just quick links (optional):
   { href: "/admin/notes", label: "Notes", Icon: FileText },
-  { href: "/admin/lectures", label: "Lectures", Icon: Video },
-  { href: "/admin/live", label: "Live", Icon: Radio },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

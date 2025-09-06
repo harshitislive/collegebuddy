@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         got: user.referralsGot.length,
       },
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error("Profile fetch error:", err)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }

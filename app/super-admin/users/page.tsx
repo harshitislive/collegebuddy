@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@prisma/client";
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "STUDENT" });
 
   async function loadUsers() {

@@ -48,6 +48,7 @@ function NotesPanel({ subjectId }: { subjectId: string }) {
     const res = await fetch(`/api/admin/notes?subjectId=${subjectId}`, { cache: "no-store" });
     setItems(await res.json());
   }
+  
   useEffect(() => { load(); }, [subjectId]);
 
   async function create(e: React.FormEvent) {

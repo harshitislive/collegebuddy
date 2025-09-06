@@ -1,14 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { useEffect, useState } from "react"
+import { formatDistanceToNow } from "date-fns"
 import { Trophy, Users, Wallet, Copy, CheckCircle, Share2 } from "lucide-react"
+
+// Define the referral type
+type Referral = {
+  name: string
+  commission: number
+  status: "SUCCESS" | "PENDING" | "FAILED" | null
+  createdAt: string
+}
 
 export default function ReferralPage() {
   const [copied, setCopied] = useState(false)
-  const [referralUrl, setReferralUrl] = useState("");
-  const [referralCode, setReferralCode] = useState("");
-  const [referrals, setReferrals] = useState<any[]>([])
+  const [referralUrl, setReferralUrl] = useState("")
+  const [referralCode, setReferralCode] = useState("")
+  const [referrals, setReferrals] = useState<Referral[]>([])
   const [activeTab, setActiveTab] = useState<"ALL" | "SUCCESS" | "PENDING">("ALL")
 
   // Fetch referrals
@@ -17,15 +25,18 @@ export default function ReferralPage() {
       try {
         const res = await fetch("/api/referrals")
         const data = await res.json()
-        const sorted = data.referrals.sort(
-          (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+
+        const sorted: Referral[] = data.referrals.sort(
+          (a: Referral, b: Referral) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
-        setReferrals(sorted);
-        setReferralCode(data.referralCode);
+
+        setReferrals(sorted)
+        setReferralCode(data.referralCode)
 
         // Build full referral URL
-        const origin = window.location.origin; // get current domain
-        setReferralUrl(`${origin}/register?ref=${data.referralCode}`);
+        const origin = window.location.origin
+        setReferralUrl(`${origin}/register?ref=${data.referralCode}`)
       } catch (err) {
         console.error("Error fetching referrals:", err)
       }
@@ -119,19 +130,25 @@ export default function ReferralPage() {
         {/* Tabs */}
         <div className="flex gap-4 mb-6">
           <button
-            className={`px-4 py-2 rounded-xl font-semibold ${activeTab === "ALL" ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-800"}`}
+            className={`px-4 py-2 rounded-xl font-semibold ${
+              activeTab === "ALL" ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-800"
+            }`}
             onClick={() => setActiveTab("ALL")}
           >
             All
           </button>
           <button
-            className={`px-4 py-2 rounded-xl font-semibold ${activeTab === "SUCCESS" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800"}`}
+            className={`px-4 py-2 rounded-xl font-semibold ${
+              activeTab === "SUCCESS" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800"
+            }`}
             onClick={() => setActiveTab("SUCCESS")}
           >
             Successful
           </button>
           <button
-            className={`px-4 py-2 rounded-xl font-semibold ${activeTab === "PENDING" ? "bg-yellow-400 text-white" : "bg-gray-200 text-gray-800"}`}
+            className={`px-4 py-2 rounded-xl font-semibold ${
+              activeTab === "PENDING" ? "bg-yellow-400 text-white" : "bg-gray-200 text-gray-800"
+            }`}
             onClick={() => setActiveTab("PENDING")}
           >
             Pending
@@ -143,15 +160,24 @@ export default function ReferralPage() {
             <p className="text-gray-500">No referrals in this category.</p>
           ) : (
             filteredReferrals.map((r, i) => (
-              <div key={i} className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
+              <div
+                key={i}
+                className="flex justify-between items-center bg-gray-100 p-3 rounded-lg"
+              >
                 <div>
                   <span className="font-medium">{r.name}</span>
                   <span className="text-gray-500 text-sm ml-2">
                     ({formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })})
                   </span>
                 </div>
-                <span className={`font-bold ${r.status === "SUCCESS" ? "text-green-600" : "text-yellow-600"}`}>
-                  {r.status === "SUCCESS" ? `+ ₹${r.commission}` : `Pending ₹${r.commission}`}
+                <span
+                  className={`font-bold ${
+                    r.status === "SUCCESS" ? "text-green-600" : "text-yellow-600"
+                  }`}
+                >
+                  {r.status === "SUCCESS"
+                    ? `+ ₹${r.commission}`
+                    : `Pending ₹${r.commission}`}
                 </span>
               </div>
             ))

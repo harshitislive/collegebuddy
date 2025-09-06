@@ -27,7 +27,7 @@ export default function LecturesPage() {
   useEffect(() => {
     const fetchAllLectures = async () => {
       try {
-        const response = await fetch("/api/lectures?first=true");
+        const response = await fetch("/api/lectures");
 
         if (response.status === 403) {
           setIsLocked(true);
@@ -39,13 +39,13 @@ export default function LecturesPage() {
         const data = await response.json();
 
         // flatten subject + course
-        const formatted: Lecture[] = data.lectures.map((lec: any) => ({
+        const formatted: Lecture[] = data.lectures.map((lec: Lecture) => ({
           id: lec.id,
           title: lec.title,
           url: lec.url,
-          courseId: lec.subject.course.id,
-          courseTitle: lec.subject.course.title,
-          subject: lec.subject.name,
+          courseId: lec.courseId,
+          courseTitle: lec.courseTitle,
+          subject: lec.subject,
         }));
 
         setLectures(formatted);
@@ -83,13 +83,13 @@ export default function LecturesPage() {
 
         const data = await response.json();
 
-        const formatted: Lecture[] = data.lectures.map((lec: any) => ({
+        const formatted: Lecture[] = data.lectures.map((lec: Lecture) => ({
           id: lec.id,
           title: lec.title,
           url: lec.url,
-          courseId: lec.subject.course.id,
-          courseTitle: lec.subject.course.title,
-          subject: lec.subject.name,
+          courseId: lec.courseId,
+          courseTitle: lec.courseTitle,
+          subject: lec.subject,
         }));
 
         setLectures(formatted);
