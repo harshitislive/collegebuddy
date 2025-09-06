@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import Link from "next/link"
+import { Note } from "@prisma/client"
 
 const courses = [
   {
@@ -55,6 +57,8 @@ const courses = [
 ]
 
 export default function NotesPage() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  
   return (
     <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
       <h1 className="text-4xl font-bold text-gray-800">📚 Course Notes</h1>

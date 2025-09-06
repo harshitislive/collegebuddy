@@ -19,10 +19,10 @@ type LiveSession = {
 };
 
 export default function LiveClassesPage() {
+  const [isLocked, setIsLocked] = useState(false);
   const [courses, setCourses] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("All");
   const [liveClasses, setLiveClasses] = useState<LiveSession[]>([]);
-  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     const fetchLiveClasses = async () => {
@@ -30,7 +30,6 @@ export default function LiveClassesPage() {
         const response = await fetch("/api/live-sessions");
 
         if (response.status === 403) {
-          // User hasn't paid
           setIsLocked(true);
           return;
         }

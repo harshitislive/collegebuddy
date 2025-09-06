@@ -152,7 +152,7 @@ export default function DashboardLayout({
       <main className="lg:pl-72">
         {/* Optional desktop topbar (keeps spacing consistent) */}
         <div className="hidden lg:block h-16" />
-        <div className="p-4 md:p-6 lg:p-8">{children}</div>
+        <main className="p-4 md:p-6 lg:p-8">{children}</main>
       </main>
     </div>
   );

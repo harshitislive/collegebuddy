@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const courseQuery = url.searchParams.get("course"); // specific course if selected
-    const firstQuery = url.searchParams.get("first");   // fetch first lectures of all courses
+    const categoryQuery = url.searchParams.get("category"); // optional filter by category (UNIT, PYQ, LIVE)
 
     // ✅ Get all paid enrollments of the user
     const paidEnrollments = await prisma.courseEnrollment.findMany({
@@ -32,15 +32,16 @@ export async function GET(req: NextRequest) {
 
     const courseIds = paidEnrollments.map((e) => e.courseId);
 
-    let lectures;
+    let notes;
 
-    if (firstQuery) {
-      // fetch first lecture of each enrolled course
-      lectures = await prisma.lecture.findMany({
+    if (courseQuery) {
+      // fetch all notes of the selected course
+      notes = await prisma.note.findMany({
         where: {
           subject: {
-            courseId: { in: courseIds },
+            courseId: courseQuery,
           },
+          ...(categoryQuery ? { category: categoryQuery as any } : {}), // optional filter
         },
         include: {
           subject: {
@@ -51,56 +52,31 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-        },
-        distinct: ["subjectId"], // first lecture of each subject
-      });
-    } else if (courseQuery) {
-      const course = await prisma.course.findUnique({
-        where: {
-          id: courseQuery,
-        },
-      })
-      // fetch all lectures of the selected course
-      lectures = await prisma.lecture.findMany({
-        where: {
-          subject: {
-            courseId: courseQuery,
-          },
-        },
-        include: {
-          subject: {
-            select: {
-              name: true,
-              course: {
-                select: { title: true },
-              },
-            },
-          },
-        },
+        }
       });
     } else {
-      // fallback: fetch first lecture of each course
-      lectures = await prisma.lecture.findMany({
+      // fetch all notes of all enrolled courses
+      notes = await prisma.note.findMany({
         where: {
           subject: {
             courseId: { in: courseIds },
           },
+          ...(categoryQuery ? { category: categoryQuery as any } : {}),
         },
         include: {
           subject: {
             select: {
               name: true,
               course: {
-                select: { title: true },
+                select: { id: true, title: true },
               },
             },
           },
-        },
-        distinct: ["subjectId"],
+        }
       });
     }
 
-    return NextResponse.json({ lectures }, { status: 200 });
+    return NextResponse.json({ notes }, { status: 200 });
   } catch (error) {
     console.error(error);
     return new Response("Internal Server Error", { status: 500 });
