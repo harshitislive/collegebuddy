@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
-import FacebookProvider from 'next-auth/providers/facebook';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { prisma } from '@/lib/prisma';
@@ -21,6 +20,7 @@ export const authOptions: AuthOptions = {
         name: { label: 'Name', type: 'text', placeholder: 'Your name' },
         email: { label: 'Email', type: 'email', placeholder: 'your@email.com' },
         password: { label: 'Password', type: 'password' },
+        referralId: { label: 'Referral ID', type: 'text' },
       },
       async authorize(credentials) {
         // Handle registration if name is provided
@@ -81,28 +81,33 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// Helper functions
-async function handleRegistration(credentials: Record<"name" | "email" | "password", string> | undefined) {
-  if (!credentials) throw new Error('No credentials provided');
-  
-  const { name, email, password } = credentials;
+function generateReferralCode(name: string) {
+  const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+  const cleanName = name.replace(/\s+/g, "").toLowerCase();
+  return `${cleanName}${randomDigits}`;
+}
+
+async function handleRegistration(credentials: Record<"name" | "email" | "password" | "referralId", string> | undefined) {
+  if (!credentials) throw new Error("No credentials provided");
+
+  const { name, email, password, referralId } = credentials;
 
   // Validate input
   if (!name || !email || !password) {
-    throw new Error('All fields are required');
+    throw new Error("All fields are required");
   }
 
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
-
+  const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    throw new Error('User already exists');
+    throw new Error("User already exists");
   }
 
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 12);
+
+  // Generate referral code
+  const referralCode = generateReferralCode(name);
 
   // Create user
   const user = await prisma.user.create({
@@ -110,16 +115,33 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
       name,
       email,
       password: hashedPassword,
+      referralCode,
+      referredBy: referralId ? (await prisma.user.findUnique({ where: { referralCode: referralId } }))?.id : null,
     },
   });
+
+  // If referral exists, create referral record
+  if (referralId) {
+    const referrer = await prisma.user.findUnique({ where: { referralCode: referralId } });
+    if (referrer) {
+      await prisma.referral.create({
+        data: {
+          referrer: { connect: { id: referrer.id } },
+          referee: { connect: { id: user.id } },
+        },
+      });
+    }
+  }
 
   return {
     id: user.id,
     name: user.name,
     role: user.role,
     email: user.email,
+    referralCode: user.referralCode,
   };
 }
+
 
 async function handleLogin(credentials: Record<"email" | "password", string> | undefined) {
   if (!credentials) throw new Error('No credentials provided');

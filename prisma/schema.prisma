@@ -13,7 +13,6 @@ enum ReferralStatus {
   REJECTED
 }
 
-
 enum PaymentStatus {
   PENDING
   SUCCESS
@@ -78,6 +77,7 @@ model Course {
   enrollments CourseEnrollment[] // 👈 back relation added here
   price       Int                @default(0)
   discount    Int                @default(0)
+  referralComission  Int         @default(0)
   createdAt   DateTime           @default(now())
 }
 
@@ -114,6 +114,8 @@ enum NoteCategory {
   UNIT
   PYQ
   LIVE
+  EBOOKS
+  OTHERS
 }
 
 model Note {
