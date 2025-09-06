@@ -48,10 +48,10 @@ export default function DashboardLayout({
   }, [open]);
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } catch (_) {}
-    window.location.href = "/login";
+    // try {
+    //   await fetch("/api/logout", { method: "POST" });
+    // } catch (_) {}
+    // window.location.href = "/login";
   };
 
   return (

@@ -1,55 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const [err, setErr] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
-  const router = useRouter();
-  const next = useSearchParams().get("next"); // optional redirect from middleware
+
+  useEffect(() => {
+    if(session) {
+      if(session.user.role === "SUPERADMIN") {
+        router.push("/super-admin");
+      } else if(session.user.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [router, session])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email: email,
+        password: password,
+        redirect: false,
       });
 
-      const data = await res.json();
-      console.log("🔎 Login API response:", data);
-
-      if (res.ok) {
-        // If middleware asked for a specific page → honor it
-        if (next) {
-          console.log("➡️ Redirecting to:", next);
-          router.replace(next);
-          return;
-        }
-
-        // Otherwise decide based on role
-        if (data.role === "SUPERADMIN") {
-          console.log("➡️ Redirecting to /super-admin");
-          router.replace("/super-admin");
-        } else if (data.role === "ADMIN") {
-          console.log("➡️ Redirecting to /admin");
-          router.replace("/admin");
-        } else {
-          console.log("➡️ Redirecting to /dashboard");
-          router.replace("/dashboard");
-        }
-      } else {
-        setErr(data.error || "Login failed");
+      if (result?.error) throw new Error(result.error)
+      if (result?.ok) {
+        console.log(result);
       }
     } catch (error) {
-      console.error("❌ Login error:", error);
-      setErr("Something went wrong");
+      console.error("Login error:", error)
+      setErr(error as string);
     }
-  };
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
