@@ -10,8 +10,9 @@ export default function RegisterPage() {
   const [err, setErr] = useState<string>("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [referralId, setReferralId] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNo, setPhoneNo] = useState("");
+  const [referralId, setReferralId] = useState("");
 
   useEffect(() => {
     const ref = searchParams?.get("ref");
@@ -25,6 +26,7 @@ export default function RegisterPage() {
         name,
         email,
         password,
+        phoneNo,
         referralId,
         redirect: false,
       })) as { error?: string; ok: boolean };
@@ -48,6 +50,7 @@ export default function RegisterPage() {
         {err && <p className="text-red-600 text-sm">{err}</p>}
 
         <input
+          required
           className="w-full border rounded p-2"
           placeholder="Full name"
           value={name}
@@ -55,6 +58,7 @@ export default function RegisterPage() {
         />
 
         <input
+          required
           className="w-full border rounded p-2"
           placeholder="Email"
           value={email}
@@ -62,11 +66,19 @@ export default function RegisterPage() {
         />
 
         <input
+          required
           className="w-full border rounded p-2"
           placeholder="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <input
+          className="w-full border rounded p-2"
+          placeholder="Phone number"
+          value={phoneNo}
+          onChange={(e) => setPhoneNo(e.target.value)}
         />
 
         <input

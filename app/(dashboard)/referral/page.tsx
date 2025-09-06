@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, isThisMonth, isThisWeek } from "date-fns"
 import { Trophy, Users, Wallet, Copy, CheckCircle, Share2 } from "lucide-react"
 
 // Define the referral type
@@ -72,9 +72,9 @@ export default function ReferralPage() {
     return true
   })
 
-  const totalCommission = filteredReferrals
-    .filter(r => r.status === "SUCCESS")
-    .reduce((sum, r) => sum + r.commission, 0)
+  const totalCommission = filteredReferrals.filter(r => r.status === "SUCCESS").reduce((sum, r) => sum + r.commission, 0);
+  const weeklyCommission = filteredReferrals.filter(r => r.status === "SUCCESS" && isThisWeek(new Date(r.createdAt))).reduce((sum, r) => sum + r.commission, 0);
+  const monthlyCommission = filteredReferrals.filter(r => r.status === "SUCCESS" && isThisMonth(new Date(r.createdAt))).reduce((sum, r) => sum + r.commission, 0);
 
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
@@ -114,12 +114,12 @@ export default function ReferralPage() {
         <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-2xl p-6 shadow-lg flex flex-col items-center">
           <Users size={40} />
           <h2 className="text-xl font-bold mt-2">Weekly Earnings</h2>
-          <p className="text-2xl font-extrabold mt-1">₹ 8,500</p>
+          <p className="text-2xl font-extrabold mt-1">₹ {weeklyCommission}</p>
         </div>
         <div className="bg-gradient-to-br from-pink-400 to-pink-600 text-white rounded-2xl p-6 shadow-lg flex flex-col items-center">
           <Wallet size={40} />
           <h2 className="text-xl font-bold mt-2">Monthly Earnings</h2>
-          <p className="text-2xl font-extrabold mt-1">₹ 32,000</p>
+          <p className="text-2xl font-extrabold mt-1">₹ {monthlyCommission}</p>
         </div>
       </div>
 
