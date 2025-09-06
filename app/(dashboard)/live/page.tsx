@@ -1,59 +1,73 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import UnlockContent from "@/components/features/unlock-content";
 
-const classes = [
-  {
-    id: "c1",
-    course: "DBMS",
-    subject: "SQL Basics",
-    teacher: "Prof. Sharma",
-    date: "2025-08-28",
-    time: "6:00 PM",
-    link: "https://meet.google.com/example-dbms",
-    status: "Upcoming",
-  },
-  {
-    id: "c2",
-    course: "Operating System",
-    subject: "Deadlock Handling",
-    teacher: "Dr. Verma",
-    date: "2025-08-29",
-    time: "7:30 PM",
-    link: "https://zoom.us/example-os",
-    status: "Upcoming",
-  },
-  {
-    id: "c3",
-    course: "Networking",
-    subject: "IP Addressing",
-    teacher: "Prof. Singh",
-    date: "2025-08-27",
-    time: "5:00 PM",
-    link: "https://meet.google.com/example-networking",
-    status: "Ongoing",
-  },
-]
-
-const courses = ["All", "DBMS", "Operating System", "Networking", "Java"]
+type LiveSession = {
+  id: string;
+  title: string;
+  date: string;
+  meetLink: string;
+  liveNotes?: string | null;
+  subject: {
+    name: string;
+    course: {
+      title: string;
+    };
+  };
+};
 
 export default function LiveClassesPage() {
-  const [selectedCourse, setSelectedCourse] = useState("All")
+  const [courses, setCourses] = useState<string[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState("All");
+  const [liveClasses, setLiveClasses] = useState<LiveSession[]>([]);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveClasses = async () => {
+      try {
+        const response = await fetch("/api/live-sessions");
+
+        if (response.status === 403) {
+          // User hasn't paid
+          setIsLocked(true);
+          return;
+        }
+
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = await response.json();
+        const sessions: LiveSession[] = data.liveSessions || [];
+
+        setLiveClasses(sessions);
+
+        // extract unique courses
+        const uniqueCourses = Array.from(new Set(sessions.map((s) => s.subject.course.title)));
+        setCourses(["All", ...uniqueCourses]);
+      } catch (error) {
+        console.error("Error fetching live classes:", error);
+      }
+    };
+
+    fetchLiveClasses();
+  }, []);
 
   const filteredClasses =
     selectedCourse === "All"
-      ? classes
-      : classes.filter((cls) => cls.course === selectedCourse)
+      ? liveClasses
+      : liveClasses.filter((cls) => cls.subject.course.title === selectedCourse);
 
   return (
-    <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
+    <UnlockContent isLocked={isLocked} fullPage>
+      <div className="relative space-y-8">
       <h1 className="text-4xl font-bold text-gray-800">📡 Live Classes</h1>
       <p className="text-gray-600">
         Join ongoing or upcoming live sessions directly from here.
       </p>
 
       {/* Course Filter */}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-3">
         {courses.map((course) => (
           <button
             key={course}
@@ -70,45 +84,61 @@ export default function LiveClassesPage() {
       </div>
 
       {/* Classes List */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredClasses.map((cls) => (
-          <div
-            key={cls.id}
-            className="bg-white border rounded-xl shadow hover:shadow-lg transition p-6 flex flex-col justify-between"
-          >
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">{cls.subject}</h2>
-              <p className="text-sm text-gray-500">
-                {cls.course} • {cls.teacher}
-              </p>
-              <p className="mt-2 text-gray-700">
-                📅 {cls.date} • 🕕 {cls.time}
-              </p>
-              <span
-                className={`inline-block mt-3 px-3 py-1 text-xs rounded-full ${
-                  cls.status === "Ongoing"
-                    ? "bg-red-100 text-red-600"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
+      {filteredClasses.length === 0 ? (
+        <p className="text-gray-500">No live sessions found for this course.</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredClasses.map((cls) => {
+            const date = new Date(cls.date);
+            const isOngoing =
+              date <= new Date() && date >= new Date(Date.now() - 60 * 60 * 1000);
+            const isUpcoming = date > new Date();
+
+            return (
+              <div
+                key={cls.id}
+                className="bg-white border rounded-xl shadow hover:shadow-lg transition p-6 flex flex-col justify-between"
               >
-                {cls.status}
-              </span>
-            </div>
-            <a
-              href={cls.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`mt-4 px-4 py-2 rounded-lg text-center font-medium shadow ${
-                cls.status === "Ongoing"
-                  ? "bg-red-500 text-white hover:bg-red-600"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
-              {cls.status === "Ongoing" ? "Join Now" : "Set Reminder"}
-            </a>
-          </div>
-        ))}
-      </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">{cls.title}</h2>
+                  <p className="text-sm text-gray-500">
+                    {cls.subject.course.title} • {cls.subject.name}
+                  </p>
+                  <p className="mt-2 text-gray-700">
+                    📅 {format(date, "PPP")} • 🕒 {format(date, "p")}
+                  </p>
+                  <span
+                    className={`inline-block mt-3 px-3 py-1 text-xs rounded-full ${
+                      isOngoing
+                        ? "bg-red-100 text-red-600"
+                        : isUpcoming
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
+                    {isOngoing ? "Ongoing" : isUpcoming ? "Upcoming" : "Completed"}
+                  </span>
+                </div>
+                <a
+                  href={cls.meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`mt-4 px-4 py-2 rounded-lg text-center font-medium shadow ${
+                    isOngoing
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : isUpcoming
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-gray-400 text-white cursor-not-allowed"
+                  }`}
+                >
+                  {isOngoing ? "Join Now" : isUpcoming ? "Set Reminder" : "Ended"}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
-  )
+    </UnlockContent>
+  );
 }

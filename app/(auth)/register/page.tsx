@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [err, setErr] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [referal, setReferal] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
-  const router = useRouter();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +24,7 @@ export default function RegisterPage() {
       if (result?.error) throw new Error(result.error)
 
       if (result?.ok) {
-        console.log(result);
-        router.push("/dashboard");
+        router.push("/enrollment");
       }
 
     } catch (error) {
@@ -41,6 +41,8 @@ export default function RegisterPage() {
         <input className="w-full border rounded p-2" placeholder="Full name" value={name} onChange={e=>setName(e.target.value)} />
         <input className="w-full border rounded p-2" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full border rounded p-2" placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        <input className="w-full border rounded p-2" placeholder="Referal code" value={referal} onChange={e=>setName(e.target.value)} />
+        
         <button className="w-full bg-blue-600 text-white rounded p-2">Register</button>
         <p className="text-sm text-center">Have an account? <a className="text-blue-600" href="/login">Login</a></p>
       </form>

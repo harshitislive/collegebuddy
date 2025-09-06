@@ -1,26 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getToken } from "next-auth/jwt";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-/** Ensure the caller is SUPERADMIN (protects API even if someone skips the UI) */
-async function requireSuperAdmin() {
-  const token = cookies().get("token")?.value;
-  if (!token) throw new Error("NO_TOKEN");
-  const { payload } = await jwtVerify(token, secret);
-  if (payload.role !== "SUPERADMIN") throw new Error("FORBIDDEN");
-  return payload; // { id, email, role, ... }
-}
+export async function GET(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-/**
- * GET /api/super-admin/subjects?courseId=...
- * List subjects for a given course
- */
-export async function GET(req: Request) {
   try {
-    await requireSuperAdmin();
+    const user = await prisma.user.findUnique({
+      where: { email: token.email! },
+      select: { role: true },
+    });
+
+    if(user?.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get("courseId");
@@ -50,9 +50,21 @@ export async function GET(req: Request) {
  * body: { name: string, courseId: string }
  * Create a subject in a course
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+   const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    await requireSuperAdmin();
+    const user = await prisma.user.findUnique({
+      where: { email: token.email! },
+      select: { role: true },
+    });
+
+    if(user?.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { name, courseId } = await req.json();
     if (!name || !courseId) {
@@ -81,14 +93,21 @@ export async function POST(req: Request) {
   }
 }
 
-/**
- * PUT /api/super-admin/subjects
- * body: { id: string, name?: string }
- * Update a subject (rename)
- */
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
   try {
-    await requireSuperAdmin();
+    const user = await prisma.user.findUnique({
+      where: { email: token.email! },
+      select: { role: true },
+    });
+
+    if(user?.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id, name } = await req.json();
     if (!id) {
@@ -121,9 +140,21 @@ export async function PUT(req: Request) {
  * body: { id: string }
  * Delete a subject and cascade-delete its children (lectures/notes/assignments/sessions)
  */
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
   try {
-    await requireSuperAdmin();
+    const user = await prisma.user.findUnique({
+      where: { email: token.email! },
+      select: { role: true },
+    });
+
+    if(user?.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await req.json();
     if (!id) {

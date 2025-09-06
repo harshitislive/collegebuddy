@@ -1,53 +1,64 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
 
-const lectures = [
-  {
-    id: "lec1",
-    course: "DBMS",
-    subject: "Database Systems",
-    title: "ER Diagrams Explained",
-    url: "https://www.youtube.com/embed/ztHopE5Wnpc",
-  },
-  {
-    id: "lec2",
-    course: "Operating System",
-    subject: "OS Basics",
-    title: "Process Management Basics",
-    url: "https://www.youtube.com/embed/vBURTt97EkA",
-  },
-  {
-    id: "lec3",
-    course: "Networking",
-    subject: "Computer Networks",
-    title: "Introduction to Networking",
-    url: "https://www.youtube.com/embed/qiQR5rTSshw",
-  },
-  {
-    id: "lec4",
-    course: "Java",
-    subject: "Java Programming",
-    title: "OOP Concepts in Java",
-    url: "https://www.youtube.com/embed/8cm1x4bC610",
-  },
-  {
-    id: "lec5",
-    course: "DBMS",
-    subject: "SQL",
-    title: "SQL Queries Explained",
-    url: "https://www.youtube.com/embed/27axs9dO7AE",
-  },
-]
+type Lecture = {
+  id: string;
+  title: string;
+  url: string;
+  course: string;
+  subject: string;
+};
 
-const courses = ["DBMS", "Operating System", "Networking", "Java"]
+export default function LecturesPage() {
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [courses, setCourses] = useState<string[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>("All");
 
-export default function RecordedLecturesPage() {
-  const [selectedCourse, setSelectedCourse] = useState("DBMS")
+  // Fetch first lectures of all courses on mount
+  useEffect(() => {
+    const fetchFirstLectures = async () => {
+      try {
+        const response = await fetch("/api/lectures?first=true");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
-  const filteredLectures = lectures.filter(
-    (lec) => lec.course === selectedCourse
-  )
+        const data: Lecture[] = await response.json();
+        setLectures(data);
+
+        // Extract unique courses
+        const uniqueCourses = Array.from(new Set(data.map((lec) => lec.course)));
+        setCourses(["All", ...uniqueCourses]);
+      } catch (error) {
+        console.error("Error fetching lectures:", error);
+      }
+    };
+
+    fetchFirstLectures();
+  }, []);
+
+  // Fetch lectures for selected course
+  useEffect(() => {
+    if (selectedCourse === "All") return; // Already fetched first lectures
+
+    const fetchCourseLectures = async () => {
+      try {
+        const response = await fetch(`/api/lectures?course=${encodeURIComponent(selectedCourse)}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data: Lecture[] = await response.json();
+        setLectures(data);
+      } catch (error) {
+        console.error("Error fetching lectures:", error);
+      }
+    };
+
+    fetchCourseLectures();
+  }, [selectedCourse]);
+
+  const filteredLectures =
+    selectedCourse === "All"
+      ? lectures
+      : lectures.filter((lec) => lec.course === selectedCourse);
 
   return (
     <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
@@ -72,37 +83,41 @@ export default function RecordedLecturesPage() {
       </div>
 
       {/* Lectures Grid */}
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {filteredLectures.map((lec) => (
-          <div
-            key={lec.id}
-            className="bg-white border rounded-xl shadow hover:shadow-lg transition overflow-hidden"
-          >
-            <div className="aspect-video bg-black">
-              <iframe
-                src={lec.url}
-                title={lec.title}
-                className="w-full h-full"
-                allowFullScreen
-              ></iframe>
+      {filteredLectures.length === 0 ? (
+        <p className="text-gray-500">No lectures found for this course.</p>
+      ) : (
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {filteredLectures.map((lec) => (
+            <div
+              key={lec.id}
+              className="bg-white border rounded-xl shadow hover:shadow-lg transition overflow-hidden"
+            >
+              <div className="aspect-video bg-black">
+                <iframe
+                  src={lec.url}
+                  title={lec.title}
+                  className="w-full h-full"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="p-4">
+                <h2 className="text-lg font-semibold text-gray-800">{lec.title}</h2>
+                <p className="text-sm text-gray-600">
+                  {lec.course} • {lec.subject}
+                </p>
+                <a
+                  href={lec.url.replace("embed/", "watch?v=")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-3 px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow"
+                >
+                  Open on YouTube
+                </a>
+              </div>
             </div>
-            <div className="p-4">
-              <h2 className="text-lg font-semibold text-gray-800">{lec.title}</h2>
-              <p className="text-sm text-gray-600">
-                {lec.course} • {lec.subject}
-              </p>
-              <a
-                href={lec.url.replace("embed/", "watch?v=")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-3 px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow"
-              >
-                Open on YouTube
-              </a>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }

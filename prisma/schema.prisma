@@ -7,17 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReferralStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 model User {
-  id        String             @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  email     String             @unique
-  password  String
-  role      Role               @default(STUDENT)
-  courses   CourseEnrollment[]
-  createdAt DateTime           @default(now())
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String             @unique
+  password    String
+  role        Role               @default(GUEST)
+  courses     CourseEnrollment[]
+  createdAt   DateTime           @default(now())
+
+  // Referral system
+  referralCode  String?     @unique @default(uuid()) 
+  referredBy    String?     @db.ObjectId
+
+  // Back relations
+  referralsMade Referral[]  @relation("UserReferralsMade")   // users this person referred
+  referralsGot  Referral[]  @relation("UserReferralsGot")    // if this user was referred
 }
 
 enum Role {
+  GUEST
   STUDENT
   ADMIN
   SUPERADMIN
@@ -29,7 +51,23 @@ model CourseEnrollment {
   studentId String   @db.ObjectId
   course    Course   @relation(fields: [courseId], references: [id])
   courseId  String   @db.ObjectId
+
+  // relation to Payment
+  payment   Payment? @relation("EnrollmentPayment")
+  paymentId String?  @db.ObjectId
+
   joinedAt  DateTime @default(now())
+}
+
+model Payment {
+  id            String           @id @default(auto()) @map("_id") @db.ObjectId
+
+  // relation back to CourseEnrollment
+  enrollment    CourseEnrollment @relation("EnrollmentPayment", fields: [enrollmentId], references: [id])
+  enrollmentId  String           @db.ObjectId @unique
+
+  status        PaymentStatus    @default(PENDING)
+  transactionId String?
 }
 
 model Course {
@@ -38,6 +76,8 @@ model Course {
   code        String?
   subjects    Subject[]
   enrollments CourseEnrollment[] // 👈 back relation added here
+  price       Int                @default(0)
+  discount    Int                @default(0)
   createdAt   DateTime           @default(now())
 }
 
@@ -92,4 +132,18 @@ model Assignment {
   dueDate     DateTime?
   subject     Subject   @relation(fields: [subjectId], references: [id])
   subjectId   String    @db.ObjectId
+}
+
+model Referral {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Referrer
+  referrer   User     @relation("UserReferralsMade", fields: [referrerId], references: [id])
+  referrerId String   @db.ObjectId
+
+  // Referee
+  referee    User     @relation("UserReferralsGot", fields: [refereeId], references: [id])
+  refereeId  String   @db.ObjectId
+
+  createdAt  DateTime @default(now())
 }

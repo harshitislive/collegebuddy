@@ -19,8 +19,7 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Home", Icon: LayoutDashboard },
   { href: "/live", label: "Live Classes", Icon: Radio },
-  { href: "/assignments", label: "Assignments", Icon: BookOpen },
-  { href: "/lectures", label: "Recorded Lectures", Icon: Video },
+  { href: "/lectures", label: "Lectures", Icon: Video },
   { href: "/notes", label: "Notes", Icon: BookOpen },
   { href: "/referral", label: "Referral", Icon: UserPlus },
   { href: "/profile", label: "Profile", Icon: User },
