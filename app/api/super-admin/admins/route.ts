@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import type { Prisma } from "@prisma/client";
 
 // GET → list all admins
 export async function GET() {
@@ -32,8 +33,14 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   const { id, name, email, password } = await req.json();
 
-  const data: any = { name, email };
-  if (password) data.password = await bcrypt.hash(password, 10);
+  const data: Prisma.UserUpdateInput = {
+    ...(name && { name }),
+    ...(email && { email }),
+  };
+
+  if (password) {
+    data.password = await bcrypt.hash(password, 10);
+  }
 
   const updated = await prisma.user.update({
     where: { id },

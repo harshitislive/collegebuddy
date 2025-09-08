@@ -20,6 +20,7 @@ export const authOptions: AuthOptions = {
         name: { label: 'Name', type: 'text', placeholder: 'Your name' },
         email: { label: 'Email', type: 'email', placeholder: 'your@email.com' },
         password: { label: 'Password', type: 'password' },
+        phoneNo: { label: 'Phone Number', type: 'tel' },
         referralId: { label: 'Referral ID', type: 'text' },
       },
       async authorize(credentials) {
@@ -87,10 +88,10 @@ function generateReferralCode(name: string) {
   return `${cleanName}${randomDigits}`;
 }
 
-async function handleRegistration(credentials: Record<"name" | "email" | "password" | "referralId", string> | undefined) {
+async function handleRegistration(credentials: Record<"name" | "email" | "password" | "referralId" | "phoneNo", string> | undefined) {
   if (!credentials) throw new Error("No credentials provided");
 
-  const { name, email, password, referralId } = credentials;
+  const { name, email, password, referralId, phoneNo } = credentials;
 
   // Validate input
   if (!name || !email || !password) {
@@ -115,6 +116,7 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
       name,
       email,
       password: hashedPassword,
+      phoneNo,
       referralCode,
       referredBy: referralId ? (await prisma.user.findUnique({ where: { referralCode: referralId } }))?.id : null,
     },

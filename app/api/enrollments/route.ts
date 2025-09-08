@@ -1,12 +1,7 @@
-import Razorpay from 'razorpay';
 import { prisma } from "@/lib/prisma";
-import { NextResponse, NextRequest } from "next/server";
 import { getToken } from 'next-auth/jwt';
+import { NextResponse, NextRequest } from "next/server";
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
 export async function POST(req: NextRequest) {
   const token = await getToken({req});
@@ -22,12 +17,6 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Course Id is required", {status:400})
     }
 
-    const course = await prisma.course.findUnique({
-        where:{
-            id: courseId
-        }
-    });
-
     const enrollment = await prisma.courseEnrollment.create({
         data:{
             courseId,
@@ -35,9 +24,10 @@ export async function POST(req: NextRequest) {
         },
     });
 
-    return new NextResponse(JSON.stringify({ enrollment }),{status:201})
+    return NextResponse.json({ enrollment }, {status:201})
     
   } catch (error) {
-    
+    console.log(error);
+    return new NextResponse("Internal Server Error",{status:500})
   }
 }

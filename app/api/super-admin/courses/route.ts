@@ -24,8 +24,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(course);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("Error creating course:", err);
+    return NextResponse.json({ error: err }, { status: 500 });
   }
 }
 
@@ -44,8 +45,9 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("Error updating course:", err);
+    return NextResponse.json({ error: err }, { status: 500 });
   }
 }
 
@@ -65,7 +67,8 @@ export async function DELETE(req: Request) {
     await prisma.course.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("Error deleting course:", err);
+    return NextResponse.json({ error: err }, { status: 500 });
   }
 }

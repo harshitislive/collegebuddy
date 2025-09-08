@@ -24,6 +24,7 @@ model User {
   name        String
   email       String             @unique
   password    String
+  phoneNo     String?            @unique
   role        Role               @default(GUEST)
   courses     CourseEnrollment[]
   createdAt   DateTime           @default(now())

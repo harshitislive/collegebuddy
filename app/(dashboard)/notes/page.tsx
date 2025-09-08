@@ -25,6 +25,23 @@ type NoteWithRelations = {
   }
 }
 
+type GroupedNote = {
+  id: string
+  name: string
+  course: string
+  notes: {
+    id: string
+    title: string
+    fileUrl: string
+  }[]
+}
+
+type GroupedNotes = {
+  [category in NoteCategory]?: {
+    [subjectId: string]: GroupedNote
+  }
+}
+
 export default function NotesPage() {
   const [loading, setLoading] = useState(true)
   const [isLocked, setIsLocked] = useState(false)
@@ -53,19 +70,19 @@ export default function NotesPage() {
     fetchNotes()
   }, [])
 
-  // ✅ Fix grouping using subjectId (from API response)
-  const grouped = notes.reduce((acc: any, note) => {
+  // ✅ Use proper types instead of any
+  const grouped = notes.reduce<GroupedNotes>((acc, note) => {
     const category = note.category
     if (!acc[category]) acc[category] = {}
-    if (!acc[category][note.subjectId]) {
-      acc[category][note.subjectId] = {
+    if (!acc[category]![note.subjectId]) {
+      acc[category]![note.subjectId] = {
         id: note.subjectId,
         name: note.subject.name,
         course: note.subject.course.title,
         notes: [],
       }
     }
-    acc[category][note.subjectId].notes.push({
+    acc[category]![note.subjectId].notes.push({
       id: note.id,
       title: note.title,
       fileUrl: note.fileUrl,
@@ -78,7 +95,7 @@ export default function NotesPage() {
     { id: "PYQ", name: "PYQs Solutions" },
     { id: "LIVE", name: "Live Class Notes" },
     { id: "EBOOKS", name: "E-Books" },
-    { id: "Others", name: "Others" },
+    { id: "OTHERS", name: "Others" },
   ]
 
   if (loading) {
@@ -103,55 +120,57 @@ export default function NotesPage() {
                 {cat.name}
               </AccordionTrigger>
               <AccordionContent className="px-6 py-4 bg-white rounded-b-xl">
-                {grouped[cat.id] ? (
+                {grouped[cat.id as NoteCategory] ? (
                   <Accordion type="single" collapsible className="w-full">
-                    {Object.values(grouped[cat.id]).map((subject: any) => (
-                      <AccordionItem
-                        key={subject.id}
-                        value={subject.id}
-                        className="border rounded-lg shadow-sm mb-3"
-                      >
-                        <AccordionTrigger className="text-lg px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-t-lg">
-                          {subject.name}{" "}
-                          <span className="ml-2 text-sm text-gray-500">
-                            ({subject.course})
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-5 py-4 bg-white rounded-b-lg">
-                          <ul className="space-y-3">
-                            {subject.notes.map((note: any) => (
-                              <li
-                                key={note.id}
-                                className="flex items-center justify-between bg-gray-50 border p-4 rounded-lg shadow-sm hover:shadow-md transition"
-                              >
-                                <span className="font-medium text-gray-700">
-                                  {note.title}
-                                </span>
-                                <div className="space-x-3">
-                                  {/* 👀 View File */}
-                                  <a
-                                    href={note.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow"
-                                  >
-                                    View
-                                  </a>
-                                  {/* ⬇️ Download File */}
-                                  <a
-                                    href={note.fileUrl}
-                                    download
-                                    className="px-4 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow"
-                                  >
-                                    Download
-                                  </a>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
+                    {Object.values(grouped[cat.id as NoteCategory]!).map(
+                      (subject) => (
+                        <AccordionItem
+                          key={subject.id}
+                          value={subject.id}
+                          className="border rounded-lg shadow-sm mb-3"
+                        >
+                          <AccordionTrigger className="text-lg px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-t-lg">
+                            {subject.name}{" "}
+                            <span className="ml-2 text-sm text-gray-500">
+                              ({subject.course})
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-5 py-4 bg-white rounded-b-lg">
+                            <ul className="space-y-3">
+                              {subject.notes.map((note) => (
+                                <li
+                                  key={note.id}
+                                  className="flex items-center justify-between bg-gray-50 border p-4 rounded-lg shadow-sm hover:shadow-md transition"
+                                >
+                                  <span className="font-medium text-gray-700">
+                                    {note.title}
+                                  </span>
+                                  <div className="space-x-3">
+                                    {/* 👀 View File */}
+                                    <a
+                                      href={note.fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow"
+                                    >
+                                      View
+                                    </a>
+                                    {/* ⬇️ Download File */}
+                                    <a
+                                      href={note.fileUrl}
+                                      download
+                                      className="px-4 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow"
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )
+                    )}
                   </Accordion>
                 ) : (
                   <p className="text-gray-500">No notes available.</p>

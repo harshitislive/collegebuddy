@@ -55,11 +55,6 @@ export async function GET(req: NextRequest) {
         distinct: ["subjectId"], // first lecture of each subject
       });
     } else if (courseQuery) {
-      const course = await prisma.course.findUnique({
-        where: {
-          id: courseQuery,
-        },
-      })
       // fetch all lectures of the selected course
       lectures = await prisma.lecture.findMany({
         where: {
@@ -100,7 +95,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ lectures }, { status: 200 });
+    const lecturesWithCourse = lectures.map((lec) => ({
+      id: lec.id,
+      title: lec.title,
+      url: lec.url,
+      courseId: lec.subject.course.id,
+      courseTitle: lec.subject.course.title,
+      subject: lec.subject.name,
+    }));
+
+    return NextResponse.json({ lectures: lecturesWithCourse }, { status: 200 });
   } catch (error) {
     console.error(error);
     return new Response("Internal Server Error", { status: 500 });

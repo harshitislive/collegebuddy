@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { getToken } from "next-auth/jwt";
 import { NextResponse, NextRequest } from "next/server";
 
+import type { NoteCategory } from "@prisma/client";
+
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
   if (!token) {
@@ -41,7 +43,7 @@ export async function GET(req: NextRequest) {
           subject: {
             courseId: courseQuery,
           },
-          ...(categoryQuery ? { category: categoryQuery as any } : {}), // optional filter
+          ...(categoryQuery ? { category: categoryQuery as NoteCategory } : {}), // optional filter
         },
         include: {
           subject: {
@@ -61,7 +63,7 @@ export async function GET(req: NextRequest) {
           subject: {
             courseId: { in: courseIds },
           },
-          ...(categoryQuery ? { category: categoryQuery as any } : {}),
+          ...(categoryQuery ? { category: categoryQuery as NoteCategory } : {}),
         },
         include: {
           subject: {
@@ -79,6 +81,43 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ notes }, { status: 200 });
   } catch (error) {
     console.error(error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  try {
+    const formData = await req.formData();
+    const title = formData.get("title") as string;
+    const fileUrl = formData.get("fileUrl") as string;
+    const subjectId = formData.get("subjectId") as string;
+    const category = (formData.get("category") as string) || "UNIT"; 
+
+    const note = await prisma.note.create({
+      data: {
+        title,
+        fileUrl,
+        subjectId,
+        category: category as NoteCategory,
+      },
+      include: {
+        subject: {
+          select: {
+            name: true,
+            course: { select: { id: true, title: true } },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ note }, { status: 201 });
+  } catch (error) {
+    console.error("Error creating note:", error);
     return new Response("Internal Server Error", { status: 500 });
   }
 }

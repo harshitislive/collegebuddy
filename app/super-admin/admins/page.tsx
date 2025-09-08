@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@prisma/client";
 
 export default function ManageAdmins() {
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [form, setForm] = useState({ id: "", name: "", email: "", password: "" });
   const [editing, setEditing] = useState(false);
 
@@ -36,7 +37,7 @@ export default function ManageAdmins() {
     loadAdmins();
   }
 
-  async function handleEdit(admin: any) {
+  async function handleEdit(admin: User) {
     setForm({ id: admin.id, name: admin.name, email: admin.email, password: "" });
     setEditing(true);
   }
