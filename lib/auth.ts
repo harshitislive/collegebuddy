@@ -1,4 +1,5 @@
 // auth.ts
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -6,6 +7,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { prisma } from '@/lib/prisma';
+import { sendMail } from '@/services/mailing.service';
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -94,14 +96,22 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
   const { name, email, password, referralId, phoneNo } = credentials;
 
   // Validate input
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !phoneNo) {
     throw new Error("All fields are required");
   }
 
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: { equals: email } },
+        { phoneNo: { equals: phoneNo } },
+      ],
+    },
+  });
+  
   if (existingUser) {
-    throw new Error("User already exists");
+    throw new Error(`${existingUser.email == email ? "Email" : "Phone"} already exists`);
   }
 
   // Hash password
@@ -122,6 +132,28 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
     },
   });
 
+  const token = crypto.randomBytes(32).toString("hex")
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60) // 1 hour
+
+  await prisma.verificationToken.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt,
+    },
+  })
+
+  const verifyUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`
+
+  sendMail({
+    recipient: user.email,
+    subject: `Welcome to CollegeBuddy! Your Referral Code is ${referralCode}`,
+    message: `
+      <p>Welcome to CollegeBuddy!</p><br/><p>Your referral code is <strong>${referralCode}</strong></p>
+      <p>Click <a href="${verifyUrl}">here</a> to verify your email.</p>
+    `
+  });
+
   // If referral exists, create referral record
   if (referralId) {
     const referrer = await prisma.user.findUnique({ where: { referralCode: referralId } });
@@ -132,6 +164,9 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
           referee: { connect: { id: user.id } },
         },
       });
+    } else {
+      console.log(`Referral ${referralId} does not exist.`);
+      throw new Error(`Referral ${referralId} does not exist.`);
     }
   }
 

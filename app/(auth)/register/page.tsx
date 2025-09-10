@@ -1,12 +1,14 @@
 "use client";
-
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
+import { signIn } from "next-auth/react";
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,17 +31,20 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phoneNo, referralId }),
+      const result = await signIn("credentials", {
+        name,
+        email,
+        phoneNo,
+        password,
+        referralId,
+        redirect: false,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (result?.error) throw new Error(result.error);
 
-      toast.success("Account created!");
-      setTimeout(() => router.push("/login"), 1500);
+      if (result?.ok) {
+        router.push("/enrollment");
+      }
     } catch (error: any) {
       console.error("Register error:", error);
       toast.error(error.message || "Something went wrong");
@@ -109,6 +114,7 @@ export default function RegisterPage() {
               </div>
 
               <input
+                required
                 type="tel"
                 className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
                 placeholder="Phone number"
