@@ -20,6 +20,10 @@ export default function RegisterPage() {
   const [phoneNo, setPhoneNo] = useState("");
   const [referralId, setReferralId] = useState("");
 
+  // email verification modal
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+
   useEffect(() => {
     const ref = searchParams?.get("ref");
     if (ref) setReferralId(ref);
@@ -54,6 +58,22 @@ export default function RegisterPage() {
     }
   };
 
+  const onVerifyEmail = () => {
+    if (!email) return toast.error("Enter email first");
+    setShowEmailModal(true);
+    // later: call backend to send code
+    toast.success("Verification code sent to email!");
+  };
+
+  const onSubmitEmailCode = () => {
+    if (emailCode.length !== 4) {
+      toast.error("Enter 4-digit code");
+      return;
+    }
+    toast.success("Email verified!");
+    setShowEmailModal(false);
+  };
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <Toaster position="top-right" />
@@ -86,15 +106,26 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
               />
 
-              <input
-                required
-                type="email"
-                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              {/* Email + Verify button */}
+              <div className="flex gap-2">
+                <input
+                  required
+                  type="email"
+                  className="flex-1 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={onVerifyEmail}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Verify
+                </button>
+              </div>
 
+              {/* Password */}
               <div className="relative">
                 <input
                   required
@@ -151,6 +182,38 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* Email Verify Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 space-y-4">
+            <h2 className="text-xl font-bold">Verify Email</h2>
+            <p className="text-sm text-gray-600">Enter the 4-digit code sent to {email}</p>
+            <input
+              type="text"
+              maxLength={4}
+              className="w-full border rounded-lg p-3 text-center tracking-widest text-lg"
+              placeholder="* * * *"
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={onSubmitEmailCode}
+                className="flex-1 bg-blue-600 text-white rounded-lg p-2"
+              >
+                Verify
+              </button>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="flex-1 border rounded-lg p-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
