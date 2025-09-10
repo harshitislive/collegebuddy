@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/subjects", label: "Subjects", Icon: BookOpen },
   // Child content will be accessed per subject; these are just quick links (optional):
   { href: "/admin/notes", label: "Notes", Icon: FileText },
+  { href: "/dashboard", label: "Student Dashboard", Icon: LayoutDashboard },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

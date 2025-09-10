@@ -20,7 +20,9 @@ const navItems = [
   { href: "/super-admin/admins", label: "Admins", Icon: UserCog },
   { href: "/super-admin/courses", label: "Courses", Icon: BookOpen },
   { href: "/super-admin/users", label: "Users", Icon: Users },
-  { href: "/super-admin/logs", label: "System Logs", Icon: BookOpen },
+  // { href: "/super-admin/logs", label: "System Logs", Icon: BookOpen },
+  { href: "/dashboard", label: "Student Dashboard", Icon: BookOpen },
+  { href: "/admin", label: "Admin Dashboard", Icon: BookOpen },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
