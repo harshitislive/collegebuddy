@@ -3,10 +3,8 @@ import React, { useState } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { createOrderId } from "@/utils/create-order-id";
-
 import type { Course } from "@prisma/client";
 
-// ✅ Types for Razorpay
 type RazorpayResponse = {
   razorpay_order_id: string;
   razorpay_payment_id: string;
@@ -17,7 +15,10 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => {
       open: () => void;
-      on: (event: "payment.failed", callback: (response: { error: unknown }) => void) => void;
+      on: (
+        event: "payment.failed",
+        callback: (response: { error: unknown }) => void
+      ) => void;
     };
   }
 }
@@ -43,9 +44,11 @@ export default function CheckoutButton({ course }: { course: Course }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ Apply discount (assuming discount is percentage)
+  const finalPrice = course.price - (course.price * (course.discount || 0)) / 100;
+
   const handlePayment = async () => {
     setIsLoading(true);
-    const price = course.price || 0;
 
     try {
       // ✅ Step 1: Create enrollment
@@ -64,12 +67,12 @@ export default function CheckoutButton({ course }: { course: Course }) {
         return;
       }
 
-      // ✅ Step 2: Create Razorpay Order
-      const orderId: string = await createOrderId(price * 100, "INR");
+      // ✅ Step 2: Create Razorpay Order with discounted price
+      const orderId: string = await createOrderId(finalPrice * 100, "INR");
 
       const options: RazorpayOptions = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: price * 100,
+        amount: finalPrice * 100,
         currency: "INR",
         name: "College Buddy",
         description: "Payment for course enrollment",
@@ -88,7 +91,8 @@ export default function CheckoutButton({ course }: { course: Course }) {
               }),
             });
 
-            if (!verifyResponse.ok) throw new Error("Payment verification failed");
+            if (!verifyResponse.ok)
+              throw new Error("Payment verification failed");
 
             alert("Payment Successful!");
             router.push("/dashboard");
@@ -98,15 +102,14 @@ export default function CheckoutButton({ course }: { course: Course }) {
           }
         },
         prefill: {
-          name: "YOUR_USER_NAME", // Replace with actual user data
-          email: "YOUR_USER_EMAIL", // Replace with actual user data
+          name: "YOUR_USER_NAME",
+          email: "YOUR_USER_EMAIL",
         },
         theme: {
           color: "#3399cc",
         },
       };
 
-      // ✅ Step 4: Open Razorpay Checkout
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", (response) => {
         alert("Payment failed");
@@ -128,9 +131,16 @@ export default function CheckoutButton({ course }: { course: Course }) {
         onClick={handlePayment}
         disabled={isLoading || !course?.id}
       >
-        {isLoading ? "Processing..." : `Enroll in ₹${course.price.toFixed(2)}`}
+        {isLoading
+          ? "Processing..."
+          : `Enroll in ₹${finalPrice.toFixed(2)} ${
+              course.discount > 0 ? `(Saved ${course.discount}%)` : ""
+            }`}
       </button>
-      <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
     </>
   );
 }
