@@ -68,8 +68,8 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Register error:", error);
-      toast.error(error as string || "Something went wrong");
-      setErr(error as string || "Something went wrong");
+      toast.error("Something went wrong");
+      setErr("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -120,7 +120,8 @@ export default function RegisterPage() {
       setEmailVerified(true);
       setShowEmailModal(false);
     } catch (error) {
-      toast.error(error as string || "Invalid OTP");
+      console.error("Error in verify OTP error:", error);
+      toast.error("Invalid OTP");
     }
   };
 

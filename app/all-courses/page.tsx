@@ -26,7 +26,7 @@ export default function AllCoursesPage() {
         setCourses(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
-        toast.error(error as string || "Failed to load courses");
+        toast.error( "Failed to load courses");
       } finally {
         setLoading(false);
       }
