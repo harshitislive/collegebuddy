@@ -19,8 +19,6 @@ export async function POST(req: Request) {
             data: { resetToken: token, resetTokenExpiry: expiry },
         })
 
-        
-
         const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`
 
         sendMail({

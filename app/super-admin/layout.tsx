@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Toaster } from "react-hot-toast";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -47,6 +48,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <Toaster position="top-right" />
+      
       {/* Top Bar (mobile) */}
       <header className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
         <div className="flex items-center justify-between h-14 px-4">

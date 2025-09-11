@@ -50,10 +50,10 @@ export default function ManageReferralsPage() {
       const message =
         status === "REJECTED" ? prompt("Enter rejection reason:") || "" : "";
 
-      const res = await fetch("/api/super-admin/referrals", {
-        method: "PATCH",
+      const res = await fetch(`/api/super-admin/referrals/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status, message }),
+        body: JSON.stringify({ status, message }),
       });
 
       const data = await res.json();
