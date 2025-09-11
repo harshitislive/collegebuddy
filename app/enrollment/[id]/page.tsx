@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import CheckoutButton from "@/components/features/checkout-button";
-
-type Course = {
-  id: string;
-  title: string;
-  code?: string;
-  price: number;
-  discount: number;
-};
+import { Course } from "@prisma/client";
 
 export default function EnrollmentDetailPage() {
   const params = useParams();

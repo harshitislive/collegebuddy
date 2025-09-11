@@ -1,14 +1,13 @@
 "use client";
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
 
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,10 +66,10 @@ export default function RegisterPage() {
       if (result?.ok) {
         router.push("/all-courses");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Register error:", error);
-      toast.error(error.message || "Something went wrong");
-      setErr(error.message || "Something went wrong");
+      toast.error(error as string || "Something went wrong");
+      setErr(error as string || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -93,8 +92,8 @@ export default function RegisterPage() {
 
       toast.success("Verification code sent to email!");
       setShowEmailModal(true);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP");
+    } catch (error) {
+      toast.error(error as string || "Failed to send OTP");
     } finally {
       setVerifyingEmail(false);
     }
@@ -120,8 +119,8 @@ export default function RegisterPage() {
       toast.success("Email verified!");
       setEmailVerified(true);
       setShowEmailModal(false);
-    } catch (err: any) {
-      toast.error(err.message || "Invalid OTP");
+    } catch (error) {
+      toast.error(error as string || "Invalid OTP");
     }
   };
 
@@ -139,7 +138,13 @@ export default function RegisterPage() {
 
           <div className="p-8 md:p-10">
             <div className="flex items-center gap-4 mb-6">
-              <img src="/logo.png" alt="College Buddy" className="w-16 h-16 object-contain" />
+              <Image 
+                width={64} 
+                height={64}
+                src="/logo.png" 
+                alt="College Buddy" 
+                className="w-16 h-16 object-contain" 
+              />
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">Create Account</h1>
                 <p className="text-sm text-slate-500">Join College Buddy today</p>

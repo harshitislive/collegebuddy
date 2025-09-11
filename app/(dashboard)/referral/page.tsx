@@ -143,7 +143,7 @@ export default function ReferralPage() {
           ].map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key as any)}
+              onClick={() => setTab(t.key as "ALL" | "SUCCESS" | "PENDING" | "REJECTED")}
               className={`px-4 py-2 rounded-lg font-medium text-white ${
                 tab === t.key ? t.color : "bg-gray-400"
               }`}

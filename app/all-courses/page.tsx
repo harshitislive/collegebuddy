@@ -24,9 +24,9 @@ export default function AllCoursesPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
         setCourses(data);
-      } catch (err: any) {
-        console.error("Error fetching courses:", err);
-        toast.error(err.message || "Failed to load courses");
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        toast.error(error as string || "Failed to load courses");
       } finally {
         setLoading(false);
       }

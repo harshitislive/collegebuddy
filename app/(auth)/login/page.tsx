@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -64,7 +65,9 @@ export default function LoginPage() {
           <div className="p-8 md:p-10">
             <div className="flex items-center gap-4 mb-6">
               {/* LOGO IMAGE */}
-              <img
+              <Image
+                width={64}
+                height={64}
                 src="/logo.png" // <-- place your updated logo here (public/logo.png)
                 alt="College Buddy"
                 className="w-16 h-16 object-contain"

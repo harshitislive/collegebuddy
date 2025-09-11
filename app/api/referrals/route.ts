@@ -16,12 +16,21 @@ export async function GET() {
       include: {
         referralsMade: {
           include: {
-            referee: true,
+            referee: {
+              include: {
+                courses: {
+                  include: {
+                    course: true,
+                  },
+                },
+              },
+            },
           },
         },
         earnings: true,
       },
     });
+
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -56,7 +65,6 @@ export async function GET() {
     const rejectedCount = user.referralsMade.filter(
       (r) => r.type === "REJECTED"
     ).length;
-    
 
     // Transform referral data for UI
     const referrals = user.referralsMade.map((r) => ({

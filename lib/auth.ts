@@ -160,8 +160,9 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
   if (referralId) {
     const referrer = await prisma.user.findUnique({ where: { referralCode: referralId } });
     if (referrer) {
-      await prisma.referral.create({
+      await prisma.referralTransaction.create({
         data: {
+          type: "PENDING",
           referrer: { connect: { id: referrer.id } },
           referee: { connect: { id: user.id } },
         },

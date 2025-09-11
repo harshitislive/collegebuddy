@@ -29,8 +29,8 @@ export default function AdminGigsPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
         setGigs(data.gigs);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to fetch gigs");
+      } catch (error) {
+        toast.error(error as string || "Failed to fetch gigs");
       } finally {
         setLoading(false);
       }
@@ -55,8 +55,8 @@ export default function AdminGigsPage() {
       setDescription("");
       setUrl("");
       setReward(0);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create gig");
+    } catch (error) {
+      toast.error(error as string || "Failed to create gig");
     }
   };
 

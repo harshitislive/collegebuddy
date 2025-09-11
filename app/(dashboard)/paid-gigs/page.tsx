@@ -23,8 +23,8 @@ export default function PaidGigsPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
         setGigs(data);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to load gigs");
+      } catch (error) {
+        toast.error(error as string || "Failed to load gigs");
       } finally {
         setLoading(false);
       }

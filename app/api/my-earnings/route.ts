@@ -60,8 +60,8 @@ export async function GET() {
       gigs,
       payouts: user.payouts,
     });
-  } catch (err: any) {
-    console.error("My Earnings API error:", err);
+  } catch (error) {
+    console.error("My Earnings API error:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

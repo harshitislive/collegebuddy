@@ -31,8 +31,8 @@ export default function MyEarningsPage() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.message);
         setData(json);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to load earnings");
+      } catch (error) {
+        toast.error(error as string || "Failed to load earnings");
       } finally {
         setLoading(false);
       }
