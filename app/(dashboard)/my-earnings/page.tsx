@@ -32,7 +32,7 @@ export default function MyEarningsPage() {
         if (!res.ok) throw new Error(json.message);
         setData(json);
       } catch (error) {
-        toast.error(error as string || "Failed to load earnings");
+        toast.error("Failed to load earnings");
       } finally {
         setLoading(false);
       }

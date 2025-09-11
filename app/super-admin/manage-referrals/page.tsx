@@ -33,8 +33,9 @@ export default function ManageReferralsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setReferrals(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load referrals");
+    } catch (error) {
+      console.log("Error while fetching referrals:", error);
+      toast.error("Failed to load referrals");
     } finally {
       setLoading(false);
     }
@@ -60,8 +61,9 @@ export default function ManageReferralsPage() {
 
       toast.success(`Referral ${status.toLowerCase()} successfully`);
       fetchReferrals();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update referral");
+    } catch (error) {
+      console.log("Error while updating status:", error);
+      toast.error("Failed to update referral");
     }
   };
 

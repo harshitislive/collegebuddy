@@ -24,7 +24,7 @@ export default function PaidGigsPage() {
         if (!res.ok) throw new Error(data.message);
         setGigs(data);
       } catch (error) {
-        toast.error(error as string || "Failed to load gigs");
+        toast.error("Failed to load gigs");
       } finally {
         setLoading(false);
       }

@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,9 +41,6 @@ export default function LoginPage() {
       });
 
       if (result?.error) throw new Error(result.error);
-      if (result?.ok) {
-        console.log(result);
-      }
     } catch (error) {
       console.error("Login error:", error);
       setErr((error as Error).message || "Login failed");
@@ -51,30 +49,49 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Please enter your email before resetting password.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      console.log(data);
+      if (res.ok) {
+        toast.success("Password reset link sent to your email.");
+      } else {
+        toast.error(data.message || "Something went wrong.");
+      }
+    } catch (err) {
+      toast.error("Failed to send reset link.");
+    }
+  };
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      {/* Card container */}
       <div className="w-full max-w-lg relative z-10">
         <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* background decoration */}
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute -top-16 -left-16 w-80 h-80 rounded-full bg-gradient-to-br from-indigo-100 via-pink-100 to-yellow-100 opacity-60 blur-3xl transform rotate-12"></div>
-            <div className="absolute -bottom-16 -right-20 w-72 h-72 rounded-full bg-gradient-to-tr from-cyan-100 via-lime-100 to-rose-100 opacity-50 blur-2xl transform -rotate-6"></div>
-          </div>
-
           <div className="p-8 md:p-10">
             <div className="flex items-center gap-4 mb-6">
-              {/* LOGO IMAGE */}
               <Image
                 width={64}
                 height={64}
-                src="/logo.png" // <-- place your updated logo here (public/logo.png)
+                src="/logo.png"
                 alt="College Buddy"
                 className="w-16 h-16 object-contain"
               />
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">College Buddy</h1>
-                <p className="text-sm text-slate-500">Welcome Back, Login your account</p>
+                <p className="text-sm text-slate-500">
+                  Welcome Back, Login your account
+                </p>
               </div>
             </div>
 
@@ -102,73 +119,43 @@ export default function LoginPage() {
                   required
                 />
 
-                {/* toggle button */}
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   onMouseDown={(e) => e.preventDefault()}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.73 1 12c.49-1.16 1.2-2.24 2.12-3.2" />
-                      <path d="M3 3l18 18" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
+                  {showPassword ? "🙈" : "👁️"}
                 </button>
               </label>
 
               <div className="flex items-center justify-between">
-                <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                {/* 🔥 Forgot password now uses handler */}
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-blue-600 hover:underline"
+                >
                   Forgot password?
-                </a>
+                </button>
 
                 <a href="/help" className="text-sm text-blue-600 hover:underline">
                   Need help?
                 </a>
               </div>
 
-              {/* Smooth loading button */}
               <button
                 type="submit"
                 disabled={loading}
-                className={
-                  `relative w-full rounded-lg px-4 py-3 font-semibold text-white transition-all duration-300 ` +
-                  (loading
+                className={`relative w-full rounded-lg px-4 py-3 font-semibold text-white transition-all duration-300 ${
+                  loading
                     ? "bg-gradient-to-r from-blue-400 to-indigo-500 opacity-90 cursor-wait"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700")
-                }
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                }`}
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="white" strokeOpacity="0.2" strokeWidth="4"></circle>
-                      <path d="M22 12a10 10 0 0 0-10-10" stroke="white" strokeWidth="4" strokeLinecap="round"></path>
-                    </svg>
-                    <span>Signing in...</span>
-                  </span>
-                ) : (
-                  <span>Login</span>
-                )}
+                {loading ? "Signing in..." : "Login"}
               </button>
-
-              <p className="text-sm text-center text-slate-500">
-                No account?{" "}
-                <a className="text-blue-600 hover:underline" href="/register">
-                  Register
-                </a>
-              </p>
             </form>
-
-            <p className="mt-6 text-xs text-slate-400 text-center">
-              By signing in you agree to our terms and privacy policy.
-            </p>
           </div>
         </div>
       </div>

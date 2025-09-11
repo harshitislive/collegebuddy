@@ -91,6 +91,10 @@ model User {
 
   // GigAssignments
   gigAssignments GigAssignment[]
+
+  //forgot password
+  resetToken        String?  @unique
+  resetTokenExpiry  DateTime?
 }
 
 model CourseEnrollment {

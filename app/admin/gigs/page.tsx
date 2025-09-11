@@ -30,7 +30,8 @@ export default function AdminGigsPage() {
         if (!res.ok) throw new Error(data.message);
         setGigs(data.gigs);
       } catch (error) {
-        toast.error(error as string || "Failed to fetch gigs");
+        console.log("Error while fetching gigs:", error);
+        toast.error("Failed to fetch gigs");
       } finally {
         setLoading(false);
       }
@@ -56,7 +57,8 @@ export default function AdminGigsPage() {
       setUrl("");
       setReward(0);
     } catch (error) {
-      toast.error(error as string || "Failed to create gig");
+      console.log("Error while creating gig:", error);
+      toast.error("Failed to create gig");
     }
   };
 

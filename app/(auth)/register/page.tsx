@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function RegisterPage() {
@@ -93,7 +93,7 @@ export default function RegisterPage() {
       toast.success("Verification code sent to email!");
       setShowEmailModal(true);
     } catch (error) {
-      toast.error(error as string || "Failed to send OTP");
+      toast.error("Failed to send OTP");
     } finally {
       setVerifyingEmail(false);
     }
@@ -127,8 +127,6 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      <Toaster position="top-right" />
-
       <div className="w-full max-w-lg relative z-10">
         <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Background decoration */}
