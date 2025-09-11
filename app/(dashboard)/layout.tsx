@@ -14,6 +14,8 @@ import {
   UserPlus,
   User,
   LogOut,
+  IndianRupee,
+  ClipboardList ,
 } from "lucide-react";
 
 const navItems = [
@@ -21,7 +23,9 @@ const navItems = [
   { href: "/live", label: "Live Classes", Icon: Radio },
   { href: "/lectures", label: "Lectures", Icon: Video },
   { href: "/notes", label: "Notes", Icon: BookOpen },
-  { href: "/referral", label: "Referral", Icon: UserPlus },
+  { href: "/my-earnings", label: "My Earnings", Icon: IndianRupee   },
+  { href: "/paid-gigs", label: "Paid Gigs", Icon: ClipboardList  },
+  { href: "/referral", label: "Referrals", Icon: UserPlus },
   { href: "/profile", label: "Profile", Icon: User },
 ];
 

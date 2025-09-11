@@ -23,17 +23,35 @@ export default function RegisterPage() {
   // email verification modal
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailCode, setEmailCode] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
 
   useEffect(() => {
     const ref = searchParams?.get("ref");
     if (ref) setReferralId(ref);
   }, [searchParams]);
 
+  // handle registration
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
-    setLoading(true);
 
+    if (!name.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(phoneNo)) {
+      toast.error("Phone number should be 10 digits");
+      return;
+    }
+
+    if (!emailVerified) {
+      toast.error("Please verify your email before registering.");
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = await signIn("credentials", {
         name,
@@ -47,7 +65,7 @@ export default function RegisterPage() {
       if (result?.error) throw new Error(result.error);
 
       if (result?.ok) {
-        router.push("/enrollment");
+        router.push("/all-courses");
       }
     } catch (error: any) {
       console.error("Register error:", error);
@@ -58,20 +76,53 @@ export default function RegisterPage() {
     }
   };
 
-  const onVerifyEmail = () => {
+  // send OTP to email
+  const onVerifyEmail = async () => {
     if (!email) return toast.error("Enter email first");
-    setShowEmailModal(true);
-    // later: call backend to send code
-    toast.success("Verification code sent to email!");
+
+    try {
+      setVerifyingEmail(true);
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      toast.success("Verification code sent to email!");
+      setShowEmailModal(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send OTP");
+    } finally {
+      setVerifyingEmail(false);
+    }
   };
 
-  const onSubmitEmailCode = () => {
+  // verify OTP
+  const onSubmitEmailCode = async () => {
     if (emailCode.length !== 4) {
       toast.error("Enter 4-digit code");
       return;
     }
-    toast.success("Email verified!");
-    setShowEmailModal(false);
+
+    try {
+      const res = await fetch("/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: emailCode }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      toast.success("Email verified!");
+      setEmailVerified(true);
+      setShowEmailModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Invalid OTP");
+    }
   };
 
   return (
@@ -98,6 +149,7 @@ export default function RegisterPage() {
             <form onSubmit={onSubmit} className="space-y-4">
               {err && <p className="text-red-600 text-sm">{err}</p>}
 
+              {/* Name */}
               <input
                 required
                 className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
@@ -106,12 +158,25 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
               />
 
+              {/* Phone */}
+              <input
+                required
+                type="tel"
+                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+                placeholder="Phone number"
+                value={phoneNo}
+                onChange={(e) => setPhoneNo(e.target.value)}
+              />
+
               {/* Email + Verify button */}
               <div className="flex gap-2">
                 <input
                   required
                   type="email"
-                  className="flex-1 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+                  disabled={emailVerified}
+                  className={`flex-1 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition ${
+                    emailVerified ? "bg-green-50 border-green-400" : ""
+                  }`}
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -119,9 +184,41 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={onVerifyEmail}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  disabled={emailVerified || verifyingEmail}
+                  className={`px-4 py-2 rounded-lg text-white transition flex items-center justify-center ${
+                    emailVerified
+                      ? "bg-green-500 cursor-default"
+                      : verifyingEmail
+                      ? "bg-blue-400 cursor-wait"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
-                  Verify
+                  {emailVerified
+                    ? "Verified"
+                    : verifyingEmail
+                    ? (
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                    )
+                    : "Verify"}
                 </button>
               </div>
 
@@ -144,25 +241,18 @@ export default function RegisterPage() {
                 </button>
               </div>
 
-              <input
-                required
-                type="tel"
-                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                placeholder="Phone number"
-                value={phoneNo}
-                onChange={(e) => setPhoneNo(e.target.value)}
-              />
-
+              {/* Referral */}
               <input
                 className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                placeholder="Referral code"
+                placeholder="Referral code (Optional)"
                 value={referralId}
                 onChange={(e) => setReferralId(e.target.value)}
               />
 
+              {/* Register Button */}
               <button
                 type="submit"
-                disabled={!name || !email || !password || loading}
+                disabled={!name || !email || !password || !emailVerified || loading}
                 className={`relative w-full rounded-lg px-4 py-3 font-semibold text-white transition-all duration-300 ${
                   loading
                     ? "bg-gradient-to-r from-blue-400 to-indigo-500 opacity-90 cursor-wait"
@@ -184,36 +274,43 @@ export default function RegisterPage() {
       </div>
 
       {/* Email Verify Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 space-y-4">
-            <h2 className="text-xl font-bold">Verify Email</h2>
-            <p className="text-sm text-gray-600">Enter the 4-digit code sent to {email}</p>
-            <input
-              type="text"
-              maxLength={4}
-              className="w-full border rounded-lg p-3 text-center tracking-widest text-lg"
-              placeholder="* * * *"
-              value={emailCode}
-              onChange={(e) => setEmailCode(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={onSubmitEmailCode}
-                className="flex-1 bg-blue-600 text-white rounded-lg p-2"
-              >
-                Verify
-              </button>
-              <button
-                onClick={() => setShowEmailModal(false)}
-                className="flex-1 border rounded-lg p-2"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+{showEmailModal && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-96 space-y-4">
+      <h2 className="text-xl font-bold">Verify Email</h2>
+      <p className="text-sm text-gray-600">Enter the 4-digit code sent to {email}</p>
+      <input
+        type="text"
+        maxLength={4}
+        className="w-full border rounded-lg p-3 text-center tracking-widest text-lg"
+        placeholder="* * * *"
+        value={emailCode}
+        onChange={(e) => setEmailCode(e.target.value)}
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={onSubmitEmailCode}
+          className="flex-1 bg-blue-600 text-white rounded-lg p-2"
+        >
+          Verify
+        </button>
+        <button
+          onClick={onVerifyEmail}
+          className="flex-1 border rounded-lg p-2 text-blue-600"
+        >
+          Resend
+        </button>
+        <button
+          onClick={() => setShowEmailModal(false)}
+          className="flex-1 border rounded-lg p-2"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </main>
   );
 }

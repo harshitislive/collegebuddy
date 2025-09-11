@@ -7,47 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ReferralStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
 enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
-}
-
-model VerificationToken {
-  id          String             @id @default(auto()) @map("_id") @db.ObjectId
-  token       String   @unique
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
-  expiresAt   DateTime
-}
-
-model User {
-  id          String             @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  email       String             @unique
-  password    String
-  phoneNo     String?            @unique
-  role        Role               @default(GUEST)
-  courses     CourseEnrollment[]
-  createdAt   DateTime           @default(now())
-
-  isVerified  Boolean            @default(false)
-
-  // Referral system
-  referralCode  String?     @unique @default(uuid()) 
-  referredBy    String?     @db.ObjectId
-
-  // Back relations
-  referralsMade Referral[]  @relation("UserReferralsMade")   // users this person referred
-  referralsGot  Referral[]  @relation("UserReferralsGot")    // if this user was referred
-
-  tokens      VerificationToken[]
 }
 
 enum Role {
@@ -57,6 +20,79 @@ enum Role {
   SUPERADMIN
 }
 
+enum ReferralType {
+  GUEST     // Registered with my referral code
+  PENDING   // Clicked / showed interest
+  SUCCESS   // Purchased a course
+  REJECTED
+}
+
+enum EarningType {
+  REFERRAL
+  COURSE
+  GIG
+}
+
+enum NoteCategory {
+  UNIT
+  PYQ
+  LIVE
+  EBOOKS
+  OTHERS
+}
+
+enum PayoutStatus {
+  PENDING
+  SUCCESS
+  REJECTED
+}
+
+model VerificationToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+}
+
+model Otp {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id          String                @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String                @unique
+  password    String
+  phoneNo     String?               @unique
+  role        Role                  @default(GUEST)
+  createdAt   DateTime              @default(now())
+  isVerified  Boolean               @default(false)
+
+  referralCode String?              @unique @default(uuid())
+  referredBy   String?              @db.ObjectId
+
+  // Relations
+  courses        CourseEnrollment[]
+  tokens         VerificationToken[]
+
+  // Referrals
+  referralsMade  ReferralTransaction[] @relation("ReferrerRelation")
+  referralsGot   ReferralTransaction[] @relation("RefereeRelation")
+
+  // Earnings & payouts
+  earnings       Earning[]
+  payouts        PaymentPayout[]
+  upi            UserUPI?
+
+  // GigAssignments
+  gigAssignments GigAssignment[]
+}
+
 model CourseEnrollment {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   student   User     @relation(fields: [studentId], references: [id])
@@ -64,7 +100,7 @@ model CourseEnrollment {
   course    Course   @relation(fields: [courseId], references: [id])
   courseId  String   @db.ObjectId
 
-  // relation to Payment
+  // Payment relation
   payment   Payment? @relation("EnrollmentPayment")
   paymentId String?  @db.ObjectId
 
@@ -72,13 +108,10 @@ model CourseEnrollment {
 }
 
 model Payment {
-  id            String           @id @default(auto()) @map("_id") @db.ObjectId
-
-  // relation back to CourseEnrollment
-  enrollment    CourseEnrollment @relation("EnrollmentPayment", fields: [enrollmentId], references: [id])
-  enrollmentId  String           @db.ObjectId @unique
-
-  status        PaymentStatus    @default(PENDING)
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  enrollment   CourseEnrollment @relation("EnrollmentPayment", fields: [enrollmentId], references: [id])
+  enrollmentId String           @db.ObjectId @unique
+  status       PaymentStatus    @default(PENDING)
   transactionId String?
 }
 
@@ -87,10 +120,10 @@ model Course {
   title       String
   code        String?
   subjects    Subject[]
-  enrollments CourseEnrollment[] // 👈 back relation added here
+  enrollments CourseEnrollment[]
   price       Int                @default(0)
   discount    Int                @default(0)
-  referralComission  Int         @default(0)
+  referralComission Int          @default(0)
   createdAt   DateTime           @default(now())
 }
 
@@ -123,21 +156,13 @@ model Lecture {
   subjectId String  @db.ObjectId
 }
 
-enum NoteCategory {
-  UNIT
-  PYQ
-  LIVE
-  EBOOKS
-  OTHERS
-}
-
 model Note {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
   title     String
   fileUrl   String
-  subject   Subject       @relation(fields: [subjectId], references: [id])
-  subjectId String        @db.ObjectId
-  category  NoteCategory  @default(UNIT) // 👈 NEW
+  subject   Subject      @relation(fields: [subjectId], references: [id])
+  subjectId String       @db.ObjectId
+  category  NoteCategory @default(UNIT)
 }
 
 model Assignment {
@@ -149,16 +174,92 @@ model Assignment {
   subjectId   String    @db.ObjectId
 }
 
-model Referral {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+enum ReferralStatus {
+  PENDING    // waiting for admin approval
+  APPROVED   // approved but not paid yet
+  REJECTED   // rejected with reason
+  CREDITED   // credited into earnings
+}
 
-  // Referrer
-  referrer   User     @relation("UserReferralsMade", fields: [referrerId], references: [id])
-  referrerId String   @db.ObjectId
+model ReferralTransaction {
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
 
-  // Referee
-  referee    User     @relation("UserReferralsGot", fields: [refereeId], references: [id])
-  refereeId  String   @db.ObjectId
+  // Referrer (who earns)
+  referrer   User            @relation("ReferrerRelation", fields: [referrerId], references: [id])
+  referrerId String          @db.ObjectId
 
-  createdAt  DateTime @default(now())
+  // Referee (new user/student/lead)
+  referee    User?           @relation("RefereeRelation", fields: [refereeId], references: [id])
+  refereeId  String?         @db.ObjectId
+
+  type       ReferralType
+  status     ReferralStatus  @default(PENDING)
+  amount     Int?            // fixed for guest, % of course for student
+  message    String?         // rejection note
+
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+
+model Earning {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String      @db.ObjectId
+  amount    Int
+  source    EarningType
+  createdAt DateTime    @default(now())
+}
+
+model UserUPI {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @db.ObjectId  @unique 
+  upiId     String
+  upiName   String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentPayout {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String       @db.ObjectId
+  amount      Int
+  status      PayoutStatus @default(PENDING)
+  message     String?
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+}
+
+model Gig {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  url         String?   // optional link (like Google Form, external task page, etc.)
+  reward      Int       // earnings for completing
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relation to assignments
+  assignments GigAssignment[]
+}
+
+model GigAssignment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  gig       Gig      @relation(fields: [gigId], references: [id])
+  gigId     String   @db.ObjectId
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String   @db.ObjectId
+  status    GigStatus @default(PENDING)
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+}
+
+enum GigStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
 }

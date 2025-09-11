@@ -28,7 +28,7 @@ export default function UnlockContent({
     if (onCtaClick) {
       onCtaClick();
     } else {
-      router.push("/enrollment");
+      router.push("/all-courses");
     }
   }
   return (

@@ -84,11 +84,13 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-function generateReferralCode(name: string) {
-  const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
-  const cleanName = name.replace(/\s+/g, "").toLowerCase();
-  return `${cleanName}${randomDigits}`;
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  return Array.from({ length: 6 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
 }
+
 
 async function handleRegistration(credentials: Record<"name" | "email" | "password" | "referralId" | "phoneNo", string> | undefined) {
   if (!credentials) throw new Error("No credentials provided");
@@ -118,7 +120,7 @@ async function handleRegistration(credentials: Record<"name" | "email" | "passwo
   const hashedPassword = await bcrypt.hash(password, 12);
 
   // Generate referral code
-  const referralCode = generateReferralCode(name);
+  const referralCode = generateReferralCode();
 
   // Create user
   const user = await prisma.user.create({

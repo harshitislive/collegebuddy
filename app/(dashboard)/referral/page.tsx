@@ -1,189 +1,221 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { formatDistanceToNow, isThisMonth, isThisWeek } from "date-fns"
-import { Trophy, Users, Wallet, Copy, CheckCircle, Share2 } from "lucide-react"
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import { Copy, IndianRupee, Phone, MessageCircle } from "lucide-react";
 
-// Define the referral type
+type Stats = {
+  referralCode: string;
+  weekly: number;
+  monthly: number;
+  total: number;
+  successCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+};
+
 type Referral = {
-  name: string
-  commission: number
-  status: "SUCCESS" | "PENDING" | "FAILED" | null
-  createdAt: string
-}
+  id: string;
+  type: "GUEST" | "PENDING" | "SUCCESS" | "REJECTED";
+  name?: string | null;
+  email?: string | null;
+  phoneNo?: string | null;
+  courseCode?: string | null;
+  amount?: number | null;
+  createdAt: string;
+};
 
 export default function ReferralPage() {
-  const [copied, setCopied] = useState(false)
-  const [referralUrl, setReferralUrl] = useState("")
-  const [referralCode, setReferralCode] = useState("")
-  const [referrals, setReferrals] = useState<Referral[]>([])
-  const [activeTab, setActiveTab] = useState<"ALL" | "SUCCESS" | "PENDING">("ALL")
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [tab, setTab] = useState<
+    "ALL" | "SUCCESS" | "PENDING" | "REJECTED"
+  >("ALL");
+  const [loading, setLoading] = useState(true);
 
-  // Fetch referrals
   useEffect(() => {
-    const fetchReferrals = async () => {
-      try {
-        const res = await fetch("/api/referrals")
-        const data = await res.json()
+    fetch("/api/referrals")
+      .then((res) => res.json())
+      .then((data) => {
+        setStats(data.stats);
+        setReferrals(data.referrals);
+      })
+      .catch(() => toast.error("Failed to load referrals"))
+      .finally(() => setLoading(false));
+  }, []);
 
-        const sorted: Referral[] = data.referrals.sort(
-          (a: Referral, b: Referral) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-
-        setReferrals(sorted)
-        setReferralCode(data.referralCode)
-
-        // Build full referral URL
-        const origin = window.location.origin
-        setReferralUrl(`${origin}/register?ref=${data.referralCode}`)
-      } catch (err) {
-        console.error("Error fetching referrals:", err)
-      }
-    }
-    fetchReferrals()
-  }, [])
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const shareReferral = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "Join this platform!",
-          text: "Sign up using my referral link and earn rewards!",
-          url: referralUrl,
-        })
-        .catch(err => console.error("Error sharing:", err))
-    } else {
-      copyToClipboard(referralUrl)
-      alert("Referral URL copied to clipboard!")
-    }
-  }
-
-  const filteredReferrals = referrals.filter(r => {
-    if (activeTab === "ALL") return true
-    if (activeTab === "SUCCESS") return r.status === "SUCCESS"
-    if (activeTab === "PENDING") return r.status !== "SUCCESS"
-    return true
-  })
-
-  const totalCommission = filteredReferrals.filter(r => r.status === "SUCCESS").reduce((sum, r) => sum + r.commission, 0);
-  const weeklyCommission = filteredReferrals.filter(r => r.status === "SUCCESS" && isThisWeek(new Date(r.createdAt))).reduce((sum, r) => sum + r.commission, 0);
-  const monthlyCommission = filteredReferrals.filter(r => r.status === "SUCCESS" && isThisMonth(new Date(r.createdAt))).reduce((sum, r) => sum + r.commission, 0);
+  const filteredReferrals =
+    tab === "ALL" ? referrals : referrals.filter((r) => r.type === tab);
 
   return (
-    <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-2xl shadow-lg p-10 text-center space-y-4">
-        <h1 className="text-2xl font-extrabold">💎 Referral & Earnings</h1>
-        <p className="mt-1 text-lg opacity-90">Invite your friends and earn rewards!</p>
+    <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-pink-50 p-6">
+      <Toaster position="top-right" />
 
-        {/* Referral URL */}
-        <div className="flex items-center justify-center gap-3 mt-4">
-          <div className="bg-white text-gray-800 px-6 py-3 rounded-xl font-mono font-bold shadow-md truncate max-w-xs">
-            {referralCode}
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold">
+              🎉 Referral Program
+            </h1>
+            <p className="text-sm text-blue-100">
+              Earn by inviting friends & sharing courses
+            </p>
           </div>
-          <button
-            onClick={() => copyToClipboard(referralUrl)}
-            className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-xl font-semibold shadow hover:bg-yellow-300 flex items-center gap-2"
-          >
-            {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
-            {copied ? "Copied" : "Copy URL"}
-          </button>
-          <button
-            onClick={shareReferral}
-            className="bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold shadow hover:bg-blue-400 flex items-center gap-2"
-          >
-            <Share2 size={18} /> Share
-          </button>
+          <div className="text-right mt-4 md:mt-0">
+            <p className="text-lg">
+              <span className="font-bold">Per Account:</span> ₹50
+            </p>
+            <p className="text-lg">
+              <span className="font-bold">Per Course Referral:</span> 10%
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Earnings Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-400 to-green-600 text-white rounded-2xl p-6 shadow-lg flex flex-col items-center">
-          <Trophy size={40} />
-          <h2 className="text-xl font-bold mt-2">Daily Earnings</h2>
-          <p className="text-2xl font-extrabold mt-1">₹ {totalCommission}</p>
-        </div>
-        <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-2xl p-6 shadow-lg flex flex-col items-center">
-          <Users size={40} />
-          <h2 className="text-xl font-bold mt-2">Weekly Earnings</h2>
-          <p className="text-2xl font-extrabold mt-1">₹ {weeklyCommission}</p>
-        </div>
-        <div className="bg-gradient-to-br from-pink-400 to-pink-600 text-white rounded-2xl p-6 shadow-lg flex flex-col items-center">
-          <Wallet size={40} />
-          <h2 className="text-xl font-bold mt-2">Monthly Earnings</h2>
-          <p className="text-2xl font-extrabold mt-1">₹ {monthlyCommission}</p>
-        </div>
-      </div>
+        {/* Referral Code */}
+        {stats && (
+          <div className="bg-white shadow rounded-xl p-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-800">
+                Your Referral Link
+              </h2>
+              <p className="text-blue-600 font-bold">
+                {`${window.location.origin}/register?ref=${stats.referralCode}`}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/register?ref=${stats.referralCode}`
+                );
+                toast.success("Referral link copied!");
+              }}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              <Copy className="w-4 h-4" /> Copy
+            </button>
+          </div>
+        )}
 
-      {/* Detailed Breakdown */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Earnings Breakdown</h2>
+        {/* Stats */}
+        {stats && (
+          <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Weekly Earnings</p>
+              <p className="text-xl font-bold text-blue-600">
+                ₹{stats.weekly}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Monthly Earnings</p>
+              <p className="text-xl font-bold text-indigo-600">
+                ₹{stats.monthly}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Total Earnings</p>
+              <p className="text-xl font-bold text-green-600">
+                ₹{stats.total}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Success Count</p>
+              <p className="text-xl font-bold text-green-600">
+                {stats.successCount}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Pending Count</p>
+              <p className="text-xl font-bold text-yellow-600">
+                {stats.pendingCount}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            className={`px-4 py-2 rounded-xl font-semibold ${
-              activeTab === "ALL" ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-800"
-            }`}
-            onClick={() => setActiveTab("ALL")}
-          >
-            All
-          </button>
-          <button
-            className={`px-4 py-2 rounded-xl font-semibold ${
-              activeTab === "SUCCESS" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800"
-            }`}
-            onClick={() => setActiveTab("SUCCESS")}
-          >
-            Successful
-          </button>
-          <button
-            className={`px-4 py-2 rounded-xl font-semibold ${
-              activeTab === "PENDING" ? "bg-yellow-400 text-white" : "bg-gray-200 text-gray-800"
-            }`}
-            onClick={() => setActiveTab("PENDING")}
-          >
-            Pending
-          </button>
+        <div className="flex gap-3">
+          {[
+            { key: "ALL", color: "bg-blue-600" },
+            { key: "SUCCESS", color: "bg-green-600" },
+            { key: "PENDING", color: "bg-orange-500" },
+            { key: "REJECTED", color: "bg-red-600" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key as any)}
+              className={`px-4 py-2 rounded-lg font-medium text-white ${
+                tab === t.key ? t.color : "bg-gray-400"
+              }`}
+            >
+              {t.key}
+            </button>
+          ))}
         </div>
 
-        <div className="space-y-3">
-          {filteredReferrals.length === 0 ? (
-            <p className="text-gray-500">No referrals in this category.</p>
+        {/* Referrals Table */}
+        <div className="bg-white shadow rounded-xl p-6">
+          {loading ? (
+            <p>Loading...</p>
+          ) : filteredReferrals.length === 0 ? (
+            <p className="text-gray-500">No referrals found.</p>
           ) : (
-            filteredReferrals.map((r, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center bg-gray-100 p-3 rounded-lg"
-              >
-                <div>
-                  <span className="font-medium">{r.name}</span>
-                  <span className="text-gray-500 text-sm ml-2">
-                    ({formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })})
-                  </span>
-                </div>
-                <span
-                  className={`font-bold ${
-                    r.status === "SUCCESS" ? "text-green-600" : "text-yellow-600"
-                  }`}
-                >
-                  {r.status === "SUCCESS"
-                    ? `+ ₹${r.commission}`
-                    : `Pending ₹${r.commission}`}
-                </span>
-              </div>
-            ))
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2 text-left">Name</th>
+                    <th className="py-2">Type</th>
+                    <th className="py-2">Course</th>
+                    <th className="py-2">Amount</th>
+                    <th className="py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReferrals.map((r) => (
+                    <tr key={r.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2">{r.name || r.email || "Guest"}</td>
+                      <td className="py-2">{r.type}</td>
+                      <td className="py-2">{r.courseCode || "-"}</td>
+                      <td className="py-2 text-center">
+                        {r.type === "SUCCESS" && r.amount ? (
+                          <span className="text-green-600 font-bold flex items-center justify-center gap-1">
+                            <IndianRupee className="w-4 h-4" />
+                            {r.amount}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="py-2 flex justify-center gap-2">
+                        {(r.type === "GUEST" || r.type === "PENDING") &&
+                          r.phoneNo && (
+                            <>
+                              <a
+                                href={`tel:${r.phoneNo}`}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <Phone className="w-5 h-5" />
+                              </a>
+                              <a
+                                href={`https://wa.me/${r.phoneNo}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                <MessageCircle className="w-5 h-5" />
+                              </a>
+                            </>
+                          )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
-    </div>
-  )
+    </main>
+  );
 }
