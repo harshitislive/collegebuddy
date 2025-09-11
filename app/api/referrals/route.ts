@@ -44,16 +44,6 @@ export async function GET() {
     const monthAgo = new Date(now);
     monthAgo.setMonth(now.getMonth() - 1);
 
-    const weekly = user.earnings
-      .filter((e) => e.createdAt >= weekAgo)
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const monthly = user.earnings
-      .filter((e) => e.createdAt >= monthAgo)
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const total = user.earnings.reduce((sum, e) => sum + e.amount, 0);
-
     const successCount = user.referralsMade.filter(
       (r) => r.type === "SUCCESS"
     ).length;
@@ -82,15 +72,24 @@ export async function GET() {
       createdAt: r.createdAt,
     }));
 
+    const courseEarnings = user.referralsMade
+      .filter((r) => r.type === "SUCCESS")
+      .reduce((acc, r) => acc + ((r.amount || 0) * 0.1), 0);
+
+
+    const inviteEarnings = user.referralsMade.length * 50;
+
     return NextResponse.json({
       stats: {
         referralCode: user.referralCode,
-        weekly,
-        monthly,
-        total,
+        total: courseEarnings + inviteEarnings,
         successCount,
         pendingCount,
         rejectedCount,
+        totalEnrollments: user.referralsMade.filter((r) => r.type === "SUCCESS").length,
+        totalInvites: user.referralsMade.length, 
+        inviteEarnings: user.referralsMade.length * 50,
+        courseEarnings,
       },
       referrals,
     });

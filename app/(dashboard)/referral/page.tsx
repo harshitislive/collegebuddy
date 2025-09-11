@@ -6,12 +6,12 @@ import { Copy, IndianRupee, Phone, MessageCircle } from "lucide-react";
 
 type Stats = {
   referralCode: string;
-  weekly: number;
-  monthly: number;
   total: number;
-  successCount: number;
-  pendingCount: number;
-  rejectedCount: number;
+  totalInvites: number;
+  totalEnrollments: number;
+  totalEarnings: number;
+  inviteEarnings: number;
+  courseEarnings: number;
 };
 
 type Referral = {
@@ -28,9 +28,7 @@ type Referral = {
 export default function ReferralPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [tab, setTab] = useState<
-    "ALL" | "SUCCESS" | "PENDING" | "REJECTED"
-  >("ALL");
+  const [tab, setTab] = useState<"ENROLLMENTS" | "INVITES">("ENROLLMENTS");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,8 +42,10 @@ export default function ReferralPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredReferrals =
-    tab === "ALL" ? referrals : referrals.filter((r) => r.type === tab);
+  const enrollments = referrals.filter((r) => r.type === "SUCCESS");
+  const invites = referrals.filter((r) => r.type !== "SUCCESS");
+
+  const filteredReferrals = tab === "ENROLLMENTS" ? enrollments : invites;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-pink-50 p-6">
@@ -55,9 +55,7 @@ export default function ReferralPage() {
         {/* Banner */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold">
-              🎉 Referral Program
-            </h1>
+            <h1 className="text-2xl font-extrabold">🎉 Referral Program</h1>
             <p className="text-sm text-blue-100">
               Earn by inviting friends & sharing courses
             </p>
@@ -101,33 +99,31 @@ export default function ReferralPage() {
         {stats && (
           <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
             <div className="bg-white shadow rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-500">Weekly Earnings</p>
-              <p className="text-xl font-bold text-blue-600">
-                ₹{stats.weekly}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-500">Monthly Earnings</p>
-              <p className="text-xl font-bold text-indigo-600">
-                ₹{stats.monthly}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-6 text-center">
               <p className="text-sm text-gray-500">Total Earnings</p>
+              <p className="text-xl font-bold text-green-600">₹{stats.total}</p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Total Enrollments</p>
               <p className="text-xl font-bold text-green-600">
-                ₹{stats.total}
+                {stats.totalEnrollments}
               </p>
             </div>
             <div className="bg-white shadow rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-500">Success Count</p>
-              <p className="text-xl font-bold text-green-600">
-                {stats.successCount}
+              <p className="text-sm text-gray-500">Enrollment Earnings</p>
+              <p className="text-xl font-bold text-purple-600">
+                ₹{stats.courseEarnings}
               </p>
             </div>
             <div className="bg-white shadow rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-500">Pending Count</p>
+              <p className="text-sm text-gray-500">Invite Earnings</p>
+              <p className="text-xl font-bold text-purple-600">
+                ₹{stats.inviteEarnings}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-6 text-center">
+              <p className="text-sm text-gray-500">Total Invites</p>
               <p className="text-xl font-bold text-yellow-600">
-                {stats.pendingCount}
+                {stats.totalInvites}
               </p>
             </div>
           </div>
@@ -136,19 +132,17 @@ export default function ReferralPage() {
         {/* Tabs */}
         <div className="flex gap-3">
           {[
-            { key: "ALL", color: "bg-blue-600" },
-            { key: "SUCCESS", color: "bg-green-600" },
-            { key: "PENDING", color: "bg-orange-500" },
-            { key: "REJECTED", color: "bg-red-600" },
+            { key: "ENROLLMENTS", label: "Enrollments", color: "bg-green-600" },
+            { key: "INVITES", label: "Invites", color: "bg-blue-600" },
           ].map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key as "ALL" | "SUCCESS" | "PENDING" | "REJECTED")}
+              onClick={() => setTab(t.key as "ENROLLMENTS" | "INVITES")}
               className={`px-4 py-2 rounded-lg font-medium text-white ${
                 tab === t.key ? t.color : "bg-gray-400"
               }`}
             >
-              {t.key}
+              {t.label}
             </button>
           ))}
         </div>
@@ -158,7 +152,11 @@ export default function ReferralPage() {
           {loading ? (
             <p>Loading...</p>
           ) : filteredReferrals.length === 0 ? (
-            <p className="text-gray-500">No referrals found.</p>
+            <p className="text-gray-500">
+              {tab === "ENROLLMENTS"
+                ? "No enrollments yet."
+                : "No invites yet."}
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
